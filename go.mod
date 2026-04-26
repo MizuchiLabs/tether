@@ -6,7 +6,6 @@ require (
 	github.com/traefik/traefik/v3 v3.6.14
 	github.com/urfave/cli/v3 v3.8.0
 	go.yaml.in/yaml/v3 v3.0.4
-	sigs.k8s.io/yaml v1.6.0
 )
 
 require (
@@ -97,4 +96,5 @@ require (
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v6 v6.4.0 // indirect
+	sigs.k8s.io/yaml v1.6.0 // indirect
 )

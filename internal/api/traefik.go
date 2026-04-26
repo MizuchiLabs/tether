@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/mizuchilabs/tether/internal/state"
-	"sigs.k8s.io/yaml"
+	"go.yaml.in/yaml/v3"
 )
 
 func PublishConfig(state *state.State) http.HandlerFunc {
