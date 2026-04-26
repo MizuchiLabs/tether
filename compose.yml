@@ -1,0 +1,19 @@
+services:
+  tether:
+    image: ghcr.io/mizuchilabs/tether:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - TETHER_SECRET=your-super-secret-key
+    ports:
+      - 3000:3000
+    restart: unless-stopped
+
+  tetherd:
+    image: ghcr.io/mizuchilabs/tetherd:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - TETHERD_SERVER=http://<TETHER_SERVER_IP>:3000
+      - TETHERD_TOKEN=your-super-secret-key
+    restart: unless-stopped
