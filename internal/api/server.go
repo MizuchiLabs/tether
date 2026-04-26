@@ -74,7 +74,6 @@ func (s *Server) registerServices() {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	// Debug
 	if s.cfg.Debug {
 		s.mux.HandleFunc("/debug/pprof/", pprof.Index)
 		s.mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
