@@ -36,6 +36,14 @@ providers:
 
 You can also just use the `http://<TETHER_SERVER_IP>:3000/config` endpoint, it will use env=default.
 
+**or using cli arguments:**
+
+```bash
+command:
+  - --providers.http.endpoint=http://tether:3000/config
+  - --providers.http.headers.Authorization=Bearer your-super-secret-key
+```
+
 ## Setup
 
 ### Docker

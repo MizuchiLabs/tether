@@ -29,7 +29,7 @@ func (s *Server) Start(ctx context.Context) error {
 	s.registerServices()
 
 	server := &http.Server{
-		Addr:              "0.0.0.0:" + s.cfg.Port,
+		Addr:              ":" + s.cfg.Port,
 		Handler:           WithLogger(s.cfg, s.mux),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
@@ -41,7 +41,7 @@ func (s *Server) Start(ctx context.Context) error {
 
 	serverErr := make(chan error, 1)
 	go func() {
-		slog.Info("Server listening on", "address", "http://127.0.0.1:"+s.cfg.Port)
+		slog.Info("Server listening on", "port", s.cfg.Port)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			serverErr <- err
 		}

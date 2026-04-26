@@ -1,19 +1,40 @@
 services:
   tether:
     image: ghcr.io/mizuchilabs/tether:latest
+    container_name: tether
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
       - TETHER_SECRET=your-super-secret-key
-    ports:
-      - 3000:3000
+    networks:
+      - proxy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.tether.rule=Host(`tether.example.com`)
+      - traefik.http.services.tether.loadbalancer.server.port=3000
     restart: unless-stopped
 
-  tetherd:
-    image: ghcr.io/mizuchilabs/tetherd:latest
+  traefik:
+    image: docker.io/traefik:latest
+    container_name: traefik
+    ports:
+      - 80:80
+      - 443:443
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
-      - TETHERD_SERVER=http://<TETHER_SERVER_IP>:3000
-      - TETHERD_TOKEN=your-super-secret-key
+      - TZ=Europe/Vienna
+    command:
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --providers.docker.endpoint=unix:///var/run/docker.sock
+      - --providers.docker.exposedbydefault=false
+      - --providers.http.endpoint=http://tether:3000/config
+      - --providers.http.headers.Authorization=Bearer your-super-secret-key
+    networks:
+      - proxy
     restart: unless-stopped
+
+networks:
+  proxy:
+    external: true
