@@ -1,6 +1,6 @@
 module github.com/mizuchilabs/tether
 
-go 1.26.2
+go 1.26.1
 
 require (
 	github.com/traefik/traefik/v3 v3.6.14
