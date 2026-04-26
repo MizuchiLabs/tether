@@ -13,13 +13,13 @@ func PublishConfig(state *state.State) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		format := r.URL.Query().Get("format")
 		accept := r.Header.Get("Accept")
-		envs := state.GetEnv(r.URL.Query().Get("env"))
+		master := state.GetMaster(r.URL.Query().Get("env"))
 
 		// Determine response format: prefer query param over header
 		if format == "yaml" || (format == "" && strings.Contains(accept, "yaml")) {
 			w.Header().Set("Content-Type", "application/x-yaml")
 			w.Header().Set("X-Content-Type-Options", "nosniff")
-			yamlBytes, err := yaml.Marshal(envs.Master)
+			yamlBytes, err := yaml.Marshal(master)
 			if err != nil {
 				http.Error(w, "internal server error", http.StatusInternalServerError)
 				return
@@ -35,7 +35,7 @@ func PublishConfig(state *state.State) http.HandlerFunc {
 		// Default to JSON
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
-		if err := json.NewEncoder(w).Encode(envs.Master); err != nil {
+		if err := json.NewEncoder(w).Encode(master); err != nil {
 			return
 		}
 	}

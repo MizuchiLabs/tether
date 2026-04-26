@@ -28,15 +28,15 @@ func New() *State {
 	return &State{Envs: make(map[string]*Environment)}
 }
 
-// GetEnv safely retrieves an environment or creates it if it doesn't exist
-func (s *State) GetEnv(env string) *Environment {
+// getEnv safely retrieves an environment or creates it if it doesn't exist.
+func (s *State) getEnv(env string) *Environment {
 	// Default to a common pool if no group is specified
 	if env == "" {
 		env = "default"
 	}
 
-	if env, exists := s.Envs[env]; exists {
-		return env
+	if e, exists := s.Envs[env]; exists {
+		return e
 	}
 
 	newEnv := &Environment{
@@ -45,6 +45,20 @@ func (s *State) GetEnv(env string) *Environment {
 	}
 	s.Envs[env] = newEnv
 	return newEnv
+}
+
+// GetMaster safely returns a snapshot of the master configuration for the given environment.
+func (s *State) GetMaster(env string) *dynamic.Configuration {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if env == "" {
+		env = "default"
+	}
+	if e, exists := s.Envs[env]; exists {
+		return e.Master
+	}
+	return &dynamic.Configuration{}
 }
 
 // UpdateAgent completely replaces the state for a specific agent and rebuilds the Master.
@@ -58,7 +72,7 @@ func (s *State) UpdateAgent(env, name string, data []byte) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	envs := s.GetEnv(env)
+	envs := s.getEnv(env)
 	envs.Agents[name] = cfg
 	s.rebuildMaster(env)
 }
@@ -94,7 +108,7 @@ func (s *State) LoadLocalFile(env, path string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	envs := s.GetEnv(env)
+	envs := s.getEnv(env)
 	envs.Local = cfg
 	return nil
 }
