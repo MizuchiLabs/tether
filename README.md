@@ -1,3 +1,11 @@
+<p align="center">
+<img src="./.github/logo.svg" width="80">
+<br><br>
+<img alt="GitHub Tag" src="https://img.shields.io/github/v/tag/MizuchiLabs/tether?label=Version">
+<img alt="GitHub License" src="https://img.shields.io/github/license/MizuchiLabs/tether">
+<img alt="GitHub Issues or Pull Requests" src="https://img.shields.io/github/issues/MizuchiLabs/tether">
+</p>
+
 # Tether
 
 Tether is a centralized Traefik configuration server and agent designed to simplify dynamic routing for distributed Docker nodes. It removes the need for complex orchestration (like Docker Swarm or Kubernetes) or a full KV store (like Consul/Redis).
