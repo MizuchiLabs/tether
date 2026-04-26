@@ -6,8 +6,8 @@ Tether is a centralized Traefik configuration server and agent designed to simpl
 
 Tether consists of two main concepts: the **Central Server** and the **Agent**.
 
-1. **The Agent:** Runs on your individual servers or nodes. It watches local configurations or Docker labels, generates a Traefik dynamic configuration, and sends it to the central Tether server via a simple HTTP heartbeat (`POST /agent/heartbeat`).
-2. **The Central Server:** Keeps all the incoming agent configurations in memory. It merges these disparate configs into a single, unified Traefik dynamic configuration.
+1. **The Agent:** Runs on your individual servers or nodes. It watches Docker labels, generates a Traefik dynamic configuration, and sends it to the central Tether server via a simple HTTP heartbeat.
+2. **The Server:** Keeps all the incoming agent configurations in memory. It merges these disparate configs into a single, unified Traefik dynamic configuration.
 3. **Traefik:** Your actual Traefik instance(s) point to the central Tether server's HTTP endpoint (`GET /config`). Traefik periodically fetches this merged configuration and updates its routing rules automatically.
 
 ### Environments
