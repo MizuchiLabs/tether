@@ -1,0 +1,116 @@
+version: 2
+project_name: tether
+report_sizes: true
+
+before:
+  hooks:
+    - go fmt ./...
+    - go vet ./...
+    - go test ./...
+    - go mod tidy
+    - go mod verify
+
+builds:
+  - binary: "{{ .ProjectName }}"
+    env: [CGO_ENABLED=0]
+    flags:
+      - -trimpath
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    ldflags:
+      - -s -w
+      - -X main.Version={{ .Version }}
+      - -X main.Commit={{ .Commit }}
+      - -X main.Date={{ .CommitDate }}
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+
+upx:
+  - enabled: true
+    lzma: true
+    compress: best
+    goos: [linux]
+
+kos:
+  - base_image: alpine
+    repositories: [ghcr.io/mizuchilabs/tether]
+    bare: true
+    preserve_import_paths: false
+    sbom: none
+    creation_time: "{{ .CommitTimestamp }}"
+    tags:
+      - "{{ .Version }}"
+      - "{{ if not .Prerelease }}latest{{ end }}"
+    platforms:
+      - linux/amd64
+      - linux/arm64
+
+signs:
+  - cmd: cosign
+    artifacts: checksum
+    signature: "${artifact}.sigstore.json"
+    args:
+      - "sign-blob"
+      - "--bundle=${signature}"
+      - "${artifact}"
+      - "--yes"
+
+sboms:
+  - cmd: syft
+    documents:
+      - "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}.sbom.json"
+    args: ["$artifact", "--output", "cyclonedx-json=$document"]
+    artifacts: binary
+
+archives:
+  - formats: [binary]
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: "{{ .ProjectName }}_checksums.txt"
+
+source:
+  enabled: true
+
+release:
+  draft: false
+  replace_existing_draft: true
+  replace_existing_artifacts: true
+  mode: keep-existing
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    include:
+      - "^feat"
+      - "^fix"
+      - "^sec"
+      - "^perf"
+      - "^refactor"
+      - "^docs"
+  groups:
+    - title: Features
+      regexp: '^feat(\(.+\))?!?:'
+      order: 0
+    - title: Security
+      regexp: '^sec(\(.+\))?!?:'
+      order: 1
+    - title: Bug Fixes
+      regexp: '^fix(\(.+\))?!?:'
+      order: 2
+    - title: Performance
+      regexp: '^perf(\(.+\))?!?:'
+      order: 3
+    - title: Refactor
+      regexp: '^refactor(\(.+\))?!?:'
+      order: 4
+    - title: Documentation
+      regexp: '^docs(\(.+\))?!?:'
+      order: 5
+    - title: Other
+      order: 999

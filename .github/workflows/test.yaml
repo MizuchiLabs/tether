@@ -1,0 +1,49 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "**/*.go"
+      - "go.mod"
+      - "go.sum"
+  pull_request:
+    branches: [main]
+    paths:
+      - "**/*.go"
+      - "go.mod"
+      - "go.sum"
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v6
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: "go.mod"
+
+      - name: Lint and test
+        run: |
+          go mod tidy
+          go mod verify
+          go fmt ./...
+          go vet ./...
+          go test ./...
+
+      - name: Install GolangCI-Lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          args: --timeout=10m
+
+      - name: Run security checks
+        uses: securego/gosec@master
+        with:
+          args: -exclude-generated ./...
+
+      - name: Build
+        run: go build -ldflags="-s -w" -o bin/
