@@ -36,7 +36,11 @@ providers:
 
 You can also just use the `http://<TETHER_SERVER_IP>:3000/config` endpoint, it will use env=default.
 
-### Tether Server
+## Setup
+
+### Docker
+
+The Tether server is a simple HTTP server that accepts agent heartbeats and returns a unified Traefik dynamic configuration. You can run it as a Docker container, or the raw binary.
 
 ```yaml
 services:
@@ -52,6 +56,10 @@ services:
       - 3000:3000
     restart: unless-stopped
 ```
+
+### Binary
+
+Download the binary from [releases](https://github.com/mizuchilabs/tether/releases).
 
 ## License
 
