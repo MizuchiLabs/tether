@@ -33,7 +33,6 @@ func New(ctx context.Context, cmd *cli.Command) (*Config, error) {
 
 	local := cmd.String("config")
 	if local != "" {
-		slog.Info("Loading local configuration file", "path", local)
 		if err := cfg.State.LoadLocalFile("default", local); err != nil {
 			return nil, err
 		}

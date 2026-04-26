@@ -50,7 +50,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
       - TETHER_SECRET=your-super-secret-key
-      # - TETHER_CONFIG=/path/to/dynamic.yml # Optional: local traefik config
+      # - TETHER_CONFIG=/path/to/dynamic.yml # Optional: defaults to /data/dynamic.yml
       # - TETHER_PORT=1234 # Optional: default is 3000
     ports:
       - 3000:3000

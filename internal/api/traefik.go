@@ -18,14 +18,15 @@ func PublishConfig(state *state.State) http.HandlerFunc {
 		// Determine response format: prefer query param over header
 		if format == "yaml" || (format == "" && strings.Contains(accept, "yaml")) {
 			w.Header().Set("Content-Type", "application/x-yaml")
+			w.Header().Set("X-Content-Type-Options", "nosniff")
 			yamlBytes, err := yaml.Marshal(envs.Master)
 			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				http.Error(w, "internal server error", http.StatusInternalServerError)
 				return
 			}
 
+			// #nosec G705 -- Content-Type is explicitly set to application/x-yaml to prevent XSS
 			if _, err := w.Write(yamlBytes); err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 			return
@@ -33,8 +34,8 @@ func PublishConfig(state *state.State) http.HandlerFunc {
 
 		// Default to JSON
 		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
 		if err := json.NewEncoder(w).Encode(envs.Master); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	}

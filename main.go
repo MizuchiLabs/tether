@@ -24,9 +24,9 @@ func main() {
 	cmd := &cli.Command{
 		EnableShellCompletion: true,
 		Suggest:               true,
-		Name:                  "mantrae",
+		Name:                  "tether",
 		Version:               fmt.Sprintf("%s (commit: %s, built: %s)", Version, Commit, Date),
-		Usage:                 "traefik configuration manager",
+		Usage:                 "traefik center",
 		Before: func(ctx context.Context, cmd *cli.Command) (context.Context, error) {
 			level := slog.LevelInfo
 			if cmd.Bool("debug") {
@@ -43,7 +43,6 @@ func main() {
 				slog.Error("Setup failed", "error", err)
 				return err
 			}
-
 			return api.New(cfg).Start(ctx)
 		},
 		Commands: []*cli.Command{},
@@ -65,6 +64,7 @@ func main() {
 				Name:    "config",
 				Aliases: []string{"c"},
 				Usage:   "Local configuration file",
+				Value:   "/data/dynamic.yml",
 				Sources: cli.EnvVars("TETHER_CONFIG"),
 			},
 			&cli.StringFlag{

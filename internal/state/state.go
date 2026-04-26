@@ -65,10 +65,18 @@ func (s *State) UpdateAgent(env, name string, data []byte) {
 
 // LoadLocalFile reads a JSON or YAML dynamic config and stores it
 func (s *State) LoadLocalFile(env, path string) error {
+	if path == "" {
+		return nil
+	}
+	if _, err := os.Stat(filepath.Clean(path)); os.IsNotExist(err) {
+		return nil
+	}
+
 	data, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
 		return fmt.Errorf("failed to read local config: %w", err)
 	}
+	slog.Info("Loading local configuration file", "path", path)
 
 	cfg := &dynamic.Configuration{}
 	ext := filepath.Ext(path)
