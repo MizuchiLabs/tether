@@ -44,7 +44,7 @@ The Tether server is a simple HTTP server that accepts agent heartbeats and retu
 
 ```yaml
 services:
-  tetherd:
+  tether:
     image: ghcr.io/mizuchilabs/tether:latest
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
