@@ -3,6 +3,7 @@ package api
 import (
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/mizuchilabs/tether/internal/config"
@@ -46,9 +47,35 @@ func WithLogger(cfg *config.Config, next http.Handler) http.Handler {
 		next.ServeHTTP(rw, r)
 		duration := time.Since(start)
 
-		// Skip logging for high-frequency endpoints unless debugging
-		if !cfg.Debug && (r.URL.Path == "/healthz" || r.URL.Path == "/api/heartbeat") {
-			return
+		var level slog.Level
+
+		// Determine log severity based on status code
+		switch {
+		case rw.statusCode >= 500:
+			level = slog.LevelError
+		case rw.statusCode >= 400:
+			level = slog.LevelWarn
+		default:
+			level = slog.LevelInfo
+			if cfg.Debug {
+				level = slog.LevelDebug
+			}
+
+			// Filter out noisy successful requests (2xx/3xx) when not debugging
+			if !cfg.Debug {
+				path := r.URL.Path
+
+				// Skip explicit background noise
+				if path == "/healthz" {
+					return
+				}
+
+				// Skip static file spam
+				isAPI := strings.HasPrefix(path, "/api/") || path == "/config"
+				if r.Method == http.MethodGet && !isAPI {
+					return
+				}
+			}
 		}
 
 		attrs := []slog.Attr{
@@ -60,19 +87,6 @@ func WithLogger(cfg *config.Config, next http.Handler) http.Handler {
 			slog.String("ip", r.RemoteAddr),
 		}
 
-		// Log based on status code severity
-		switch {
-		case rw.statusCode >= 500:
-			slog.LogAttrs(r.Context(), slog.LevelError, "http_request", attrs...)
-		case rw.statusCode >= 400:
-			slog.LogAttrs(r.Context(), slog.LevelWarn, "http_request", attrs...)
-		default:
-			// Treat 2xx and 3xx as Info, or Debug based on your config
-			level := slog.LevelInfo
-			if cfg.Debug {
-				level = slog.LevelDebug
-			}
-			slog.LogAttrs(r.Context(), level, "http_request", attrs...)
-		}
+		slog.LogAttrs(r.Context(), level, "http_request", attrs...)
 	})
 }
