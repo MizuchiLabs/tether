@@ -4,31 +4,23 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/mizuchilabs/tether/internal/config"
+	"github.com/mizuchilabs/tether/internal/state"
 )
 
-type AgentService struct {
-	cfg *config.Config
-}
-
-func NewAgentService(cfg *config.Config) *AgentService {
-	return &AgentService{cfg: cfg}
-}
-
-type AgentHeartbeatRequest struct {
+type HeartbeatRequest struct {
 	Env    string          `json:"env"`
 	Name   string          `json:"name"`
 	Config json.RawMessage `json:"config"`
 }
 
-func (s *AgentService) Heartbeat() http.HandlerFunc {
+func Heartbeat(state *state.State) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
 
-		var req AgentHeartbeatRequest
+		var req HeartbeatRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, "Invalid request body", http.StatusBadRequest)
 			return
@@ -39,7 +31,7 @@ func (s *AgentService) Heartbeat() http.HandlerFunc {
 			return
 		}
 
-		s.cfg.State.UpdateAgent(req.Env, req.Name, req.Config)
+		state.UpdateAgent(req.Env, req.Name, req.Config)
 		w.WriteHeader(http.StatusOK)
 	}
 }

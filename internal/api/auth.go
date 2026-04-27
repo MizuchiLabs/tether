@@ -1,24 +1,29 @@
 package api
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 
-	"github.com/mizuchilabs/tether/internal/config"
 	"github.com/mizuchilabs/tether/internal/util"
 )
 
 var ErrUnauthorized = errors.New("unauthorized")
 
-type AuthInterceptor struct {
-	cfg *config.Config
+type AuthService struct {
+	secret string
 }
 
-func NewAuthInterceptor(cfg *config.Config) *AuthInterceptor {
-	return &AuthInterceptor{cfg: cfg}
+type LoginRequest struct {
+	Secret string `json:"secret"`
 }
 
-func (a *AuthInterceptor) WithAuth(next http.Handler) http.Handler {
+func NewAuthService(secret string) *AuthService {
+	return &AuthService{secret: secret}
+}
+
+func (a *AuthService) WithAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := a.authenticate(r.Header); err != nil {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
@@ -29,17 +34,67 @@ func (a *AuthInterceptor) WithAuth(next http.Handler) http.Handler {
 }
 
 // authenticate routes to the appropriate authentication method
-func (a *AuthInterceptor) authenticate(header http.Header) error {
-	if a.cfg.Secret == "" {
+func (a *AuthService) authenticate(header http.Header) error {
+	if a.secret == "" {
 		return nil // Authentication disabled
 	}
 
-	bearer := util.GetBearerToken(header)
-	if bearer == "" {
+	token := util.GetAccessToken(header)
+	if token == "" {
 		return ErrUnauthorized
 	}
-	if a.cfg.Secret != bearer {
+	if a.secret != token {
 		return ErrUnauthorized
 	}
 	return nil
+}
+
+func Login(secret string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		var req LoginRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid request", http.StatusBadRequest)
+			return
+		}
+		fmt.Printf("secret: %v\n", secret)
+		fmt.Printf("req.Secret: %v\n", req.Secret)
+
+		// Verify the secret against your config
+		if secret != "" && req.Secret != secret {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		// Set the secure, HttpOnly cookie
+		http.SetCookie(w, &http.Cookie{
+			Name:     util.AccessTokenName,
+			Value:    req.Secret,
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   true,
+			SameSite: http.SameSiteStrictMode,
+			MaxAge:   86400 * 7,
+		})
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+func Logout() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		http.SetCookie(w, &http.Cookie{
+			Name:     util.AccessTokenName,
+			Value:    "",
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   true,
+			SameSite: http.SameSiteStrictMode,
+			MaxAge:   -1,
+		})
+		w.WriteHeader(http.StatusOK)
+	}
 }

@@ -5,10 +5,27 @@ env:
   IMAGE: ghcr.io/mizuchilabs/tether
 
 tasks:
+  dev:
+    output: prefixed
+    desc: Run backend and frontend concurrently
+    deps: [backend, frontend]
+
+  backend:
+    desc: Run backend
+    cmds:
+      - go run . -s 123
+
+  frontend:
+    desc: Run frontend
+    dir: web
+    cmds:
+      - pnpm run dev
+
   update:
     desc: Update dependencies
     cmds:
       - go get -u ./...
+      - cd web && pnpm update --latest
 
   build:
     desc: Build binary

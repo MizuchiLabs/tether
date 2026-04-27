@@ -40,7 +40,6 @@ func main() {
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			cfg, err := config.New(ctx, cmd)
 			if err != nil {
-				slog.Error("Setup failed", "error", err)
 				return err
 			}
 			return api.New(cfg).Start(ctx)
@@ -68,10 +67,10 @@ func main() {
 				Sources: cli.EnvVars("TETHER_CONFIG"),
 			},
 			&cli.StringFlag{
-				Name:    "secret",
-				Aliases: []string{"s"},
-				Usage:   "Shared secret for agent authentication",
-				Sources: cli.EnvVars("TETHER_SECRET"),
+				Name:    "token",
+				Aliases: []string{"t"},
+				Usage:   "Shared secret token for agent authentication",
+				Sources: cli.EnvVars("TETHER_TOKEN"),
 			},
 		},
 	}

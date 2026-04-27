@@ -20,12 +20,16 @@ type Environment struct {
 }
 
 type State struct {
-	mu   sync.RWMutex
-	Envs map[string]*Environment // Map of group names to their environments
+	mu          sync.RWMutex
+	Envs        map[string]*Environment // Map of group names to their environments
+	subscribers map[string][]chan *dynamic.Configuration
 }
 
 func New() *State {
-	return &State{Envs: make(map[string]*Environment)}
+	return &State{
+		Envs:        make(map[string]*Environment),
+		subscribers: make(map[string][]chan *dynamic.Configuration),
+	}
 }
 
 // getEnv safely retrieves an environment or creates it if it doesn't exist.
@@ -126,7 +130,6 @@ func (s *State) LoadLocalFile(env, path string) error {
 }
 
 // rebuildMaster loops through all known agents and merges them into a brand new Master.
-// Note: Must be called while holding the write lock (s.mu.Lock()).
 func (s *State) rebuildMaster(env string) {
 	envs := s.Envs[env]
 	newMaster := &dynamic.Configuration{}
@@ -144,4 +147,50 @@ func (s *State) rebuildMaster(env string) {
 		newMaster.TLS = mergeTLS(newMaster.TLS, agentCfg.TLS)
 	}
 	envs.Master = newMaster
+
+	// Broadcast to listeners
+	if subs, exists := s.subscribers[env]; exists {
+		for _, ch := range subs {
+			// Non-blocking send: if a client is slow/hung, we drop the event
+			select {
+			case ch <- newMaster:
+			default:
+			}
+		}
+	}
+}
+
+// Subscribe creates a channel that receives updates for a specific environment.
+func (s *State) Subscribe(env string) chan *dynamic.Configuration {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if env == "" {
+		env = "default"
+	}
+
+	// Use a buffered channel (size 1) so broadcasting doesn't block
+	ch := make(chan *dynamic.Configuration, 1)
+	s.subscribers[env] = append(s.subscribers[env], ch)
+	return ch
+}
+
+// Unsubscribe removes a channel from the pool and closes it.
+func (s *State) Unsubscribe(env string, ch chan *dynamic.Configuration) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if env == "" {
+		env = "default"
+	}
+
+	subs := s.subscribers[env]
+	for i, sub := range subs {
+		if sub == ch {
+			// Remove the channel from the slice
+			s.subscribers[env] = append(subs[:i], subs[i+1:]...)
+			close(ch)
+			break
+		}
+	}
 }

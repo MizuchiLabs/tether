@@ -1,10 +1,12 @@
 <script lang="ts">
-	import { authState } from '$lib/auth.svelte';
-	import { Lock, RefreshCw, Shield } from '@lucide/svelte';
-	import { Button } from '$lib/ui/button';
+	import { RefreshCw } from '@lucide/svelte';
+	import { Button } from '$lib/components/ui/button';
+	import { Input } from '$lib/components/ui/input';
+	import { Label } from '$lib/components/ui/label';
+	import { loggedIn } from '$lib/store.svelte';
+	import Logo from '$lib/assets/logo.svelte';
 
-	let { onLogin } = $props<{ onLogin: () => void }>();
-	let inputToken = $state(authState.token);
+	let secret = $state('');
 	let isLoading = $state(false);
 	let error = $state('');
 
@@ -13,15 +15,16 @@
 		isLoading = true;
 		error = '';
 		try {
-			const res = await fetch('/envs', {
-				headers: inputToken ? { Authorization: `Bearer ${inputToken}` } : {}
+			const res = await fetch('/api/login', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ secret })
 			});
 			if (res.ok) {
-				authState.setToken(inputToken);
-				authState.isAuthed = true;
-				onLogin();
+				loggedIn.current = true;
+				secret = '';
 			} else {
-				error = 'Invalid token or unauthorized';
+				error = 'Invalid token';
 			}
 		} catch (err: any) {
 			error = err.message || 'Connection error';
@@ -31,42 +34,47 @@
 	}
 </script>
 
-<div class="mx-auto mt-20 w-full max-w-md">
-	<div class="rounded-xl border p-8 shadow-xl bg-card">
-		<div class="mb-6 flex flex-col items-center text-center">
-			<div
-				class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-800/30"
-			>
-				<Shield class="h-6 w-6 text-indigo-600 dark:text-indigo-300" />
-			</div>
-			<h2 class="text-2xl font-bold">Authentication</h2>
-			<p class="mt-2 text-sm">Enter your access token to view configurations.</p>
-		</div>
+{#if !loggedIn.current}
+	<section class="flex min-h-screen px-4 py-16 md:py-32 dark:bg-transparent">
+		<form
+			onsubmit={handleSubmit}
+			class="m-auto h-fit w-full max-w-sm overflow-hidden rounded-[calc(var(--radius)+.125rem)] border bg-muted shadow-md shadow-zinc-950/5 dark:[--color-muted:var(--color-zinc-900)]"
+		>
+			<div class="-m-px rounded-[calc(var(--radius)+.125rem)] border bg-card p-8 pb-6">
+				<div class="text-center">
+					<a href="/" aria-label="go home" class="mx-auto block w-fit">
+						<Logo class="size-7" />
+					</a>
+					<h1 class="mt-4 mb-1 text-xl font-semibold">Sign In to Tether</h1>
+					<p class="text-sm">Enter your access token to view configurations</p>
+				</div>
 
-		<form onsubmit={handleSubmit} class="space-y-4">
-			<div>
-				<div class="relative">
-					<Lock class="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2" />
-					<input
-						type="password"
-						bind:value={inputToken}
-						placeholder="Bearer Token"
-						class="w-full rounded-lg border bg-transparent py-2.5 pl-10 pr-4 text-sm outline-none transition-all"
-						disabled={isLoading}
-					/>
+				<div class="mt-6 space-y-6">
+					<div class="space-y-2">
+						<Label for="pwd" class="text-title text-sm">Bearer Token</Label>
+						<Input
+							bind:value={secret}
+							type="password"
+							required
+							name="pwd"
+							placeholder="Enter your token"
+							disabled={isLoading}
+						/>
+						{#if error}
+							<p class="text-sm text-red-500">{error}</p>
+						{/if}
+					</div>
+
+					<Button type="submit" disabled={isLoading} class="w-full">
+						{#if isLoading}
+							<RefreshCw class="animate-spin" />
+							Verifying...
+						{:else}
+							Sign In
+						{/if}
+					</Button>
 				</div>
 			</div>
-			{#if error}
-				<p class="text-sm text-red-500 font-medium">{error}</p>
-			{/if}
-			<Button type="submit" disabled={isLoading} class="w-full">
-				{#if isLoading}
-					<RefreshCw class="animate-spin" />
-					Verifying...
-				{:else}
-					Access Configuration
-				{/if}
-			</Button>
 		</form>
-	</div>
-</div>
+	</section>
+{/if}

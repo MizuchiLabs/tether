@@ -13,7 +13,6 @@ import (
 	"github.com/mizuchilabs/tether/internal/config"
 	"github.com/mizuchilabs/tether/web"
 	"github.com/vearutop/statigz"
-	"github.com/vearutop/statigz/brotli"
 )
 
 type Server struct {
@@ -63,25 +62,19 @@ func (s *Server) Start(ctx context.Context) error {
 }
 
 func (s *Server) registerServices() {
-	authChain := NewChain(NewAuthInterceptor(s.cfg).WithAuth)
+	protec := NewChain(NewAuthService(s.cfg.Token).WithAuth)
 
-	// Agent Service
-	agentService := NewAgentService(s.cfg)
-	s.mux.Handle("POST /agent/heartbeat", authChain.ThenFunc(agentService.Heartbeat()))
+	s.mux.Handle("POST /api/login", Login(s.cfg.Token))
+	s.mux.Handle("POST /api/logout", Logout())
+	s.mux.Handle("POST /api/heartbeat", protec.ThenFunc(Heartbeat(s.cfg.State)))
+	s.mux.Handle("GET /api/events", protec.ThenFunc(EventStream(s.cfg.State)))
+	s.mux.Handle("GET /api/envs", protec.ThenFunc(PublishEnvs(s.cfg.State)))
+	s.mux.Handle("GET /config", protec.ThenFunc(PublishConfig(s.cfg.State)))
 
-	// Config
-	s.mux.Handle("GET /config", authChain.ThenFunc(PublishConfig(s.cfg.State)))
-	s.mux.Handle("GET /envs", authChain.ThenFunc(PublishEnvs(s.cfg.State)))
-
-	// Health
 	s.mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
-	s.mux.Handle("/", statigz.FileServer(
-		web.StaticFS,
-		brotli.AddEncoding,
-		statigz.FSPrefix("build"),
-	))
+	s.mux.Handle("/", statigz.FileServer(web.StaticFS, statigz.FSPrefix("build")))
 
 	if s.cfg.Debug {
 		s.mux.HandleFunc("/debug/pprof/", pprof.Index)

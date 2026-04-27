@@ -1,128 +1,163 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { Button } from '$lib/components/ui/button';
+	import * as Empty from '$lib/components/ui/empty';
+	import * as Tabs from '$lib/components/ui/tabs';
+	import { lang } from '$lib/store.svelte';
+	import { Bug, Check, Code, Copy, FileBraces, RefreshCw } from '@lucide/svelte';
 	import { createHighlighter } from 'shiki';
+	import { onMount } from 'svelte';
 	import YAML from 'yaml';
-	import { RefreshCw, Code, FileBraces } from '@lucide/svelte';
-	import { authState } from '$lib/auth.svelte';
-	import { Button } from '$lib/ui/button';
-	import * as Tabs from '$lib/ui/tabs';
 
 	let { env }: { env: string } = $props();
 
-	let lang: 'json' | 'yaml' = $state('yaml');
-	let rawData = $state('');
+	let configData = $state<any>(null);
 	let isLoading = $state(false);
 	let error = $state('');
-	let highlighter: Awaited<ReturnType<typeof createHighlighter>> | null = $state(null);
+	let copied = $state(false);
+	let highlighter = $state<Awaited<ReturnType<typeof createHighlighter>> | null>(null);
 
 	onMount(async () => {
 		highlighter = await createHighlighter({
 			themes: ['catppuccin-latte', 'catppuccin-macchiato'],
 			langs: ['json', 'yaml']
 		});
-		fetchConfig();
 	});
 
-	async function fetchConfig() {
-		if (!env) return;
+	async function fetchConfig(targetEnv: string) {
 		isLoading = true;
 		error = '';
+		configData = null;
 		try {
-			const res = await fetch(`/config?env=${env}&format=json`, {
-				headers: authState.token ? { Authorization: `Bearer ${authState.token}` } : {}
-			});
-			if (res.ok) {
-				const data = await res.json();
-				rawData = JSON.stringify(data);
-			} else {
-				error = 'Failed to fetch config';
-				rawData = '';
-			}
-		} catch (err: any) {
-			error = err.message;
-			rawData = '';
+			const res = await fetch(`/config?env=${targetEnv}&format=json`);
+			if (!res.ok) throw new Error('Failed to fetch config');
+			configData = await res.json();
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Unknown error occurred';
 		} finally {
 			isLoading = false;
 		}
 	}
 
-	const formatted = $derived.by(() => {
-		if (!rawData) return '';
+	$effect(() => {
+		if (!env) return;
+		fetchConfig(env);
+
+		const eventSource = new EventSource(`/api/events?env=${env}`, { withCredentials: true });
+		eventSource.onmessage = (event) => {
+			try {
+				configData = JSON.parse(event.data);
+				error = '';
+			} catch (err) {
+				console.error('Failed to parse SSE data', err);
+			}
+		};
+		return () => {
+			eventSource.close();
+		};
+	});
+
+	const formattedText = $derived.by(() => {
+		if (!configData) return '';
 		try {
-			const obj = JSON.parse(rawData);
-			return lang === 'json'
-				? JSON.stringify(obj, null, 2)
-				: YAML.stringify(obj, {
-						indent: 2,
-						lineWidth: 0,
-						collectionStyle: 'block'
-					});
-		} catch (e) {
-			return rawData;
+			return lang.current === 'json'
+				? JSON.stringify(configData, null, 2)
+				: YAML.stringify(configData, { indent: 2, lineWidth: 0, collectionStyle: 'block' });
+		} catch {
+			return 'Error formatting configuration data.';
 		}
+	});
+	const isEmptyConfig = $derived.by(() => {
+		return configData && typeof configData === 'object' && Object.keys(configData).length === 0;
 	});
 
 	const codeHtml = $derived.by(() => {
-		if (!highlighter || !formatted) return '';
-		return highlighter.codeToHtml(formatted, {
-			lang,
-			themes: {
-				light: 'catppuccin-latte',
-				dark: 'catppuccin-macchiato'
-			}
+		if (!highlighter || !formattedText) return '';
+		return highlighter.codeToHtml(formattedText, {
+			lang: lang.current,
+			themes: { light: 'catppuccin-latte', dark: 'catppuccin-macchiato' }
 		});
 	});
 
-	$effect(() => {
-		if (env) fetchConfig();
-	});
+	async function handleCopy() {
+		if (!formattedText) return;
+		await navigator.clipboard.writeText(formattedText);
+		copied = true;
+		setTimeout(() => (copied = false), 2000);
+	}
 </script>
 
 <div class="flex flex-col gap-4 flex-1">
 	<div class="flex items-center justify-between">
-		<Tabs.Root value="yaml">
+		<Tabs.Root bind:value={lang.current}>
 			<Tabs.List>
-				<Tabs.Trigger value="yaml" onclick={() => (lang = 'yaml')}>
-					<Code />
-					YAML
+				<Tabs.Trigger value="yaml" class="gap-2">
+					<Code /> YAML
 				</Tabs.Trigger>
-				<Tabs.Trigger value="json" onclick={() => (lang = 'json')}>
-					<FileBraces />
-					JSON
+				<Tabs.Trigger value="json" class="gap-2">
+					<FileBraces /> JSON
 				</Tabs.Trigger>
 			</Tabs.List>
 		</Tabs.Root>
 
-		<Button variant="outline" onclick={fetchConfig} disabled={isLoading}>
+		<Button variant="outline" onclick={() => fetchConfig(env)} disabled={isLoading}>
 			<RefreshCw class={isLoading ? 'animate-spin' : ''} />
 			Refresh
 		</Button>
 	</div>
 
-	{#if error}
-		<div
-			class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-400"
-		>
-			{error}
-		</div>
-	{/if}
+	{#if isLoading}
+		<Empty.Root class="border border-dashed max-h-80">
+			<Empty.Header>
+				<Empty.Media variant="icon">
+					<RefreshCw class="animate-spin" />
+				</Empty.Media>
+				<Empty.Title>Loading configuration...</Empty.Title>
+				<Empty.Description>Fetching configuration from Tether.</Empty.Description>
+			</Empty.Header>
+		</Empty.Root>
+	{:else if isEmptyConfig}
+		<Empty.Root class="border border-dashed max-h-80">
+			<Empty.Header>
+				<Empty.Media variant="icon">
+					<FileBraces />
+				</Empty.Media>
+				<Empty.Title>Configuration is empty</Empty.Title>
+				<Empty.Description>
+					Traefik returned an empty ruleset {'{}'} for this environment.
+				</Empty.Description>
+			</Empty.Header>
+		</Empty.Root>
+	{:else if error}
+		<Empty.Root class="border border-dashed max-h-80">
+			<Empty.Header>
+				<Empty.Media variant="icon" class="bg-destructive/30">
+					<Bug class="text-destructive" />
+				</Empty.Media>
+				<Empty.Title class="text-destructive">Error</Empty.Title>
+				<Empty.Description class="text-destructive/75">{error}</Empty.Description>
+			</Empty.Header>
+		</Empty.Root>
+	{:else if formattedText && codeHtml}
+		<div class="relative flex-1 overflow-hidden rounded-xl border shadow-sm bg-card group">
+			<Button
+				variant="ghost"
+				size="icon"
+				class="absolute right-3 top-3 z-10 opacity-0 transition-opacity group-hover:opacity-100"
+				onclick={handleCopy}
+				title="Copy to clipboard"
+			>
+				{#if copied}
+					<Check class="text-green-500" />
+				{:else}
+					<Copy />
+				{/if}
+			</Button>
 
-	<div class="relative flex-1 overflow-hidden rounded-xl border shadow-sm bg-card">
-		{#if formatted && codeHtml}
 			<div class="h-full overflow-auto p-4 text-sm leading-relaxed shiki-container">
 				{@html codeHtml}
 			</div>
-		{:else if isLoading}
-			<div class="flex h-64 items-center justify-center">
-				<RefreshCw class="animate-spin" />
-				Loading configuration...
-			</div>
-		{:else}
-			<div class="flex h-64 items-center justify-center">
-				No configuration available for "{env}".
-			</div>
-		{/if}
-	</div>
+		</div>
+	{/if}
 </div>
 
 <style>

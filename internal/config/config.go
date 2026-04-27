@@ -11,7 +11,7 @@ import (
 
 type Config struct {
 	Port    string
-	Secret  string
+	Token   string
 	Version string
 	Debug   bool
 
@@ -26,8 +26,8 @@ func New(ctx context.Context, cmd *cli.Command) (*Config, error) {
 	cfg.Version = cmd.Root().Version
 	cfg.Debug = cmd.Bool("debug")
 	cfg.Port = cmd.String("port")
-	cfg.Secret = cmd.String("secret")
-	if cfg.Secret == "" {
+	cfg.Token = cmd.String("token")
+	if cfg.Token == "" {
 		slog.Warn("Authentication is disabled")
 	}
 

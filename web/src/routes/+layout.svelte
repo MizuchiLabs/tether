@@ -1,62 +1,64 @@
 <script lang="ts">
 	import './layout.css';
 	import { onMount } from 'svelte';
-	import { authState } from '$lib/auth.svelte';
 	import Logo from '$lib/assets/logo.svelte';
-	import { Button } from '$lib/ui/button';
+	import { Button } from '$lib/components/ui/button';
 	import { LogOut, Moon, Sun } from '@lucide/svelte';
-	import { ModeWatcher, toggleMode, mode } from 'mode-watcher';
+	import { ModeWatcher, toggleMode } from 'mode-watcher';
+	import Login from '$lib/components/Login.svelte';
+	import { loggedIn } from '$lib/store.svelte';
 
 	const { children } = $props();
 
 	onMount(async () => {
-		// Initial check
 		try {
-			const res = await fetch('/envs', {
-				headers: authState.token ? { Authorization: `Bearer ${authState.token}` } : {}
-			});
+			const res = await fetch('/api/envs');
 			if (res.ok) {
-				authState.isAuthed = true;
+				loggedIn.current = true;
+			} else {
+				loggedIn.current = false;
 			}
-		} catch (e) {
-			// Ignore initial fail, Login component will handle it
-		}
+		} catch (_) {}
 	});
 
-	function logout() {
-		authState.setToken('');
-		authState.isAuthed = false;
+	async function logout() {
+		await fetch('/api/logout', { method: 'POST' });
+		loggedIn.current = false;
 	}
 </script>
 
 <ModeWatcher />
+<Login />
 
-<div class="flex min-h-screen flex-col">
-	<header
-		class="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-accent-foreground px-6 bg-card shadow-sm"
-	>
-		<div class="flex items-center gap-3">
-			<Logo class="h-6 w-6" />
-			<h1 class="text-xl font-bold tracking-tight">Tether</h1>
-		</div>
-		<div class="flex items-center gap-3">
-			<Button variant="ghost" size="icon" onclick={toggleMode}>
-				{#if mode.current === 'light'}
-					<Sun />
-				{:else}
-					<Moon />
-				{/if}
-			</Button>
+{#if loggedIn.current}
+	<div class="flex min-h-screen flex-col">
+		<header class="sticky top-0 z-40 w-full border-b bg-background/80 backdrop-blur-md shadow-sm">
+			<div class="container mx-auto flex h-14 items-center justify-between px-6 sm:px-0">
+				<div class="flex items-center gap-3">
+					<Logo class="size-6" />
+					<h1 class="text-xl font-bold tracking-tight">Tether</h1>
+				</div>
 
-			{#if authState.isAuthed}
-				<Button variant="ghost" size="icon" onclick={logout}>
-					<LogOut />
-				</Button>
-			{/if}
-		</div>
-	</header>
+				<div class="flex items-center gap-2">
+					<Button variant="ghost" size="icon" onclick={toggleMode} class="relative">
+						<Sun
+							class="rotate-0 scale-100 transition-all duration-300 dark:-rotate-90 dark:scale-0"
+						/>
+						<Moon
+							class="absolute rotate-90 scale-0 transition-all duration-300 dark:rotate-0 dark:scale-100"
+						/>
+						<span class="sr-only">Toggle theme</span>
+					</Button>
 
-	<main class="flex flex-1 flex-col p-6">
-		{@render children()}
-	</main>
-</div>
+					<Button variant="ghost" size="icon" onclick={logout} title="Log out">
+						<LogOut />
+					</Button>
+				</div>
+			</div>
+		</header>
+
+		<main class="flex flex-1 flex-col container mx-auto py-6 px-4 sm:px-0">
+			{@render children()}
+		</main>
+	</div>
+{/if}
