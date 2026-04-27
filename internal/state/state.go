@@ -47,6 +47,18 @@ func (s *State) getEnv(env string) *Environment {
 	return newEnv
 }
 
+// GetEnvNames returns a list of all environment names.
+func (s *State) GetEnvNames() []string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	names := make([]string, 0, len(s.Envs))
+	for name := range s.Envs {
+		names = append(names, name)
+	}
+	return names
+}
+
 // GetMaster safely returns a snapshot of the master configuration for the given environment.
 func (s *State) GetMaster(env string) *dynamic.Configuration {
 	s.mu.RLock()

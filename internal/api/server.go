@@ -68,6 +68,7 @@ func (s *Server) registerServices() {
 
 	// Config
 	s.mux.Handle("GET /config", authChain.ThenFunc(PublishConfig(s.cfg.State)))
+	s.mux.Handle("GET /envs", authChain.ThenFunc(PublishEnvs(s.cfg.State)))
 
 	// Health
 	s.mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {

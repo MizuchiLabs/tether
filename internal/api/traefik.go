@@ -26,17 +26,13 @@ func PublishConfig(state *state.State) http.HandlerFunc {
 			}
 
 			// #nosec G705 -- Content-Type is explicitly set to application/x-yaml to prevent XSS
-			if _, err := w.Write(yamlBytes); err != nil {
-				return
-			}
+			_, _ = w.Write(yamlBytes)
 			return
 		}
 
 		// Default to JSON
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
-		if err := json.NewEncoder(w).Encode(master); err != nil {
-			return
-		}
+		_ = json.NewEncoder(w).Encode(master)
 	}
 }
