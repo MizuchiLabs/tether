@@ -5,10 +5,12 @@ go 1.26.1
 require (
 	github.com/traefik/traefik/v3 v3.6.14
 	github.com/urfave/cli/v3 v3.8.0
+	github.com/vearutop/statigz v1.5.0
 	go.yaml.in/yaml/v3 v3.0.4
 )
 
 require (
+	github.com/andybalholm/brotli v1.2.1 // indirect
 	github.com/aws/smithy-go v1.25.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect

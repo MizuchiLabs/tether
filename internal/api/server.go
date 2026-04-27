@@ -11,6 +11,9 @@ import (
 	"time"
 
 	"github.com/mizuchilabs/tether/internal/config"
+	"github.com/mizuchilabs/tether/web"
+	"github.com/vearutop/statigz"
+	"github.com/vearutop/statigz/brotli"
 )
 
 type Server struct {
@@ -74,6 +77,11 @@ func (s *Server) registerServices() {
 	s.mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
+	s.mux.Handle("/", statigz.FileServer(
+		web.StaticFS,
+		brotli.AddEncoding,
+		statigz.FSPrefix("build"),
+	))
 
 	if s.cfg.Debug {
 		s.mux.HandleFunc("/debug/pprof/", pprof.Index)

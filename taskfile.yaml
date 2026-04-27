@@ -13,6 +13,7 @@ tasks:
   build:
     desc: Build binary
     cmds:
+      - go generate ./...
       - go build -ldflags="-s -w" -trimpath -o bin/tether
 
   lint:

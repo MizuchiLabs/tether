@@ -22,6 +22,21 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v6
 
+      - uses: pnpm/action-setup@v6
+        with:
+          version: latest
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: "pnpm"
+          cache-dependency-path: "web/pnpm-lock.yaml"
+
+      - name: Build frontend
+        working-directory: web
+        run: pnpm install && pnpm build
+
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
@@ -46,4 +61,5 @@ jobs:
           args: -exclude-generated ./...
 
       - name: Build
-        run: go build -ldflags="-s -w" -o bin/
+        run: |
+          go build -ldflags="-s -w" -o bin/
