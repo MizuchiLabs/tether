@@ -3,8 +3,8 @@
 <br><br>
 <img alt="GitHub Tag" src="https://img.shields.io/github/v/tag/MizuchiLabs/tether?label=Version">
 <img alt="GitHub License" src="https://img.shields.io/github/license/MizuchiLabs/tether">
-</p>
 <img alt="GitHub Issues or Pull Requests" src="https://img.shields.io/github/issues/MizuchiLabs/tether">
+</p>
 
 # Tether
 
