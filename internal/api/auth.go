@@ -48,7 +48,7 @@ func (a *AuthService) authenticate(header http.Header) error {
 	return nil
 }
 
-func Login(secret string) http.HandlerFunc {
+func Login(token string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -62,7 +62,7 @@ func Login(secret string) http.HandlerFunc {
 		}
 
 		// Verify the secret against your config
-		if secret != "" && req.Secret != secret {
+		if token != "" && req.Secret != token {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}

@@ -36,7 +36,7 @@ export const api = {
     loggedIn.current = false;
   },
   envs: () => client<string[]>("/api/envs"),
-  config: (env: string) => client<any>(`/api/config?env=${env}`),
+  config: (env: string) => client<any>(`/config?env=${env}`),
 
   events(env: string): EventSource {
     const source = new EventSource(`/api/events?env=${env}`, { withCredentials: true });

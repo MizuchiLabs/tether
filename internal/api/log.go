@@ -83,10 +83,9 @@ func WithLogger(cfg *config.Config, next http.Handler) http.Handler {
 			slog.String("path", r.URL.Path),
 			slog.Int("status", rw.statusCode),
 			slog.Duration("duration", duration),
-			slog.Int("size", rw.size),
 			slog.String("ip", r.RemoteAddr),
 		}
 
-		slog.LogAttrs(r.Context(), level, "http_request", attrs...)
+		slog.LogAttrs(r.Context(), level, "http", attrs...)
 	})
 }

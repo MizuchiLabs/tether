@@ -138,7 +138,7 @@
 				</Empty.Media>
 				<Empty.Title>Configuration is empty</Empty.Title>
 				<Empty.Description>
-					Traefik returned an empty ruleset {'{}'} for this environment.
+					Tether returned an empty ruleset for this environment.
 				</Empty.Description>
 			</Empty.Header>
 		</Empty.Root>

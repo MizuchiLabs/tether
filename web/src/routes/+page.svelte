@@ -10,7 +10,29 @@
 	let env = $state('');
 
 	$effect(() => {
-		if (loggedIn.current) api.envs();
+		if (!loggedIn.current) return;
+
+		let timeoutId: number | undefined;
+		async function pollEnvs() {
+			try {
+				const data = await api.envs();
+				envs = Array.isArray(data) ? data : [];
+
+				if (envs.length > 0) {
+					if (!env) {
+						env = envs.includes('default') ? 'default' : envs[0];
+					}
+					return; // Stop polling once an environment is available
+				}
+			} catch (_) {}
+			timeoutId = window.setTimeout(pollEnvs, 5000);
+		}
+
+		pollEnvs();
+
+		return () => {
+			if (timeoutId) clearTimeout(timeoutId);
+		};
 	});
 </script>
 

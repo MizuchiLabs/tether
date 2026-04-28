@@ -28,8 +28,7 @@ func EventStream(state *state.State) http.HandlerFunc {
 				data, _ := json.Marshal(newConfig)
 				_, _ = fmt.Fprintf(w, "data: %s\n\n", data)
 
-				err := rc.Flush()
-				if err != nil {
+				if err := rc.Flush(); err != nil {
 					// Client disconnected or connection dropped
 					return
 				}
