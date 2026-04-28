@@ -52,6 +52,11 @@ func main() {
 				Usage:   "Enable debug logging",
 				Sources: cli.EnvVars("TETHER_DEBUG"),
 			},
+			&cli.BoolFlag{
+				Name:    "no-web",
+				Usage:   "Disable the web UI",
+				Sources: cli.EnvVars("TETHER_NO_WEB"),
+			},
 			&cli.StringFlag{
 				Name:    "port",
 				Aliases: []string{"p"},

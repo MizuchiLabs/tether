@@ -63,6 +63,7 @@ providers:
 | --------------- | ---------- | ------------------- | -------------------------------------------------------------- |
 | `TETHER_TOKEN`  | `--token`  |                     | **Strongly recommended**: Shared secret for agents to connect. |
 | `TETHER_PORT`   | `--port`   | `3000`              | Port Tether listens on.                                        |
+| `TETHER_NO_WEB` | `--no-web` | `false`             | Disable serving the web UI.                                    |
 | `TETHER_CONFIG` | `--config` | `/data/dynamic.yml` | Optional local file for manual Traefik rules.                  |
 | `TETHER_DEBUG`  | `--debug`  | `false`             | Enable detailed logging.                                       |
 
