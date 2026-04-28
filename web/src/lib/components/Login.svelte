@@ -37,19 +37,19 @@
 					<a href="/" aria-label="go home" class="mx-auto block w-fit">
 						<Logo class="size-7" />
 					</a>
-					<h1 class="mt-4 mb-1 text-xl font-semibold">Sign In to Tether</h1>
-					<p class="text-sm">Enter your access token to view configurations</p>
+					<h1 class="mt-4 mb-1 text-xl font-semibold">Authenticate with Tether</h1>
+					<p class="text-sm">Enter your shared secret token to view agent configurations.</p>
 				</div>
 
 				<div class="mt-6 space-y-6">
 					<div class="space-y-2">
-						<Label for="pwd" class="text-title text-sm">Bearer Token</Label>
+						<Label for="pwd" class="text-title text-sm">Access Token</Label>
 						<Input
 							bind:value={secret}
 							type="password"
 							required
 							name="pwd"
-							placeholder="Enter your token"
+							placeholder="e.g., your-secret-password"
 							disabled={isLoading}
 						/>
 						{#if error}

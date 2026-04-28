@@ -14,6 +14,7 @@
 
 		let timeoutId: number | undefined;
 		async function pollEnvs() {
+			if (!loggedIn.current) return;
 			try {
 				const data = await api.envs();
 				envs = Array.isArray(data) ? data : [];
@@ -39,9 +40,9 @@
 <div class="mx-auto w-full max-w-5xl flex-1 flex flex-col gap-6">
 	<div class="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
 		<div>
-			<h2 class="text-2xl font-bold tracking-tight">Configuration Explorer</h2>
+			<h2 class="text-2xl font-bold tracking-tight">Environment Explorer</h2>
 			<p class="text-sm text-muted-foreground">
-				Viewing Traefik routing rules and service definitions.
+				View dynamic Traefik routing configurations and services pushed by your agents.
 			</p>
 		</div>
 
@@ -72,10 +73,9 @@
 				<Empty.Media variant="icon">
 					<Cloud />
 				</Empty.Media>
-				<Empty.Title>No environment selected</Empty.Title>
+				<Empty.Title>Waiting for agents...</Empty.Title>
 				<Empty.Description>
-					Environments are created automatically once agents push data to the server. Waiting for
-					incoming data...
+					Environments are discovered automatically when tetherd agents push their local configurations. Waiting for the first agent to connect...
 				</Empty.Description>
 			</Empty.Header>
 		</Empty.Root>
