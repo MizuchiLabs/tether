@@ -28,7 +28,7 @@ func New(cfg *config.Config) *Server {
 }
 
 func (s *Server) Start(ctx context.Context) error {
-	s.registerServices()
+	s.registerServices(ctx)
 
 	server := &http.Server{
 		Addr:              ":" + s.cfg.Port,
@@ -61,20 +61,31 @@ func (s *Server) Start(ctx context.Context) error {
 	}
 }
 
-func (s *Server) registerServices() {
-	protec := NewChain(NewAuthService(s.cfg.Token).WithAuth)
+func (s *Server) registerServices(ctx context.Context) {
+	global := NewChain(
+		WithRateLimit(),
+		WithBodyLimit,
+		WithSecurityHeaders,
+	)
 
-	s.mux.Handle("POST /api/login", Login(s.cfg.Token))
-	s.mux.Handle("POST /api/logout", Logout())
+	// Auth chain builds on global chain
+	protec := NewChain(append(global.constructors, NewAuthService(s.cfg.Token).WithAuth)...)
+
+	s.mux.Handle("POST /api/login", global.ThenFunc(Login(s.cfg.Token)))
+	s.mux.Handle("POST /api/logout", global.ThenFunc(Logout()))
 	s.mux.Handle("POST /api/heartbeat", protec.ThenFunc(Heartbeat(s.cfg.State)))
-	s.mux.Handle("GET /api/events", protec.ThenFunc(EventStream(s.cfg.State)))
+	s.mux.Handle("GET /api/events", protec.ThenFunc(EventStream(ctx, s.cfg.State)))
 	s.mux.Handle("GET /api/envs", protec.ThenFunc(PublishEnvs(s.cfg.State)))
 	s.mux.Handle("GET /config", protec.ThenFunc(PublishConfig(s.cfg.State)))
 
 	s.mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
-	s.mux.Handle("/", statigz.FileServer(web.StaticFS, statigz.FSPrefix("build")))
+
+	if !s.cfg.NoWeb {
+		// Apply security headers to frontend too, but allow slightly larger body if needed (or just use global)
+		s.mux.Handle("/", global.Then(statigz.FileServer(web.StaticFS, statigz.FSPrefix("build"))))
+	}
 
 	if s.cfg.Debug {
 		s.mux.HandleFunc("/debug/pprof/", pprof.Index)

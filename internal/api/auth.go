@@ -1,6 +1,7 @@
 package api
 
 import (
+	"crypto/subtle"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -42,7 +43,7 @@ func (a *AuthService) authenticate(header http.Header) error {
 	if token == "" {
 		return ErrUnauthorized
 	}
-	if a.secret != token {
+	if subtle.ConstantTimeCompare([]byte(a.secret), []byte(token)) != 1 {
 		return ErrUnauthorized
 	}
 	return nil
@@ -62,7 +63,7 @@ func Login(token string) http.HandlerFunc {
 		}
 
 		// Verify the secret against your config
-		if token != "" && req.Secret != token {
+		if token != "" && subtle.ConstantTimeCompare([]byte(req.Secret), []byte(token)) != 1 {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}

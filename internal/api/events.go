@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -8,7 +9,7 @@ import (
 	"github.com/mizuchilabs/tether/internal/state"
 )
 
-func EventStream(state *state.State) http.HandlerFunc {
+func EventStream(ctx context.Context, state *state.State) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/event-stream")
 		w.Header().Set("Cache-Control", "no-cache")
@@ -23,6 +24,8 @@ func EventStream(state *state.State) http.HandlerFunc {
 		for {
 			select {
 			case <-r.Context().Done():
+				return
+			case <-ctx.Done():
 				return
 			case newConfig := <-updateCh:
 				data, _ := json.Marshal(newConfig)
