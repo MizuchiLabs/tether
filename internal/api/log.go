@@ -60,19 +60,23 @@ func WithLogger(cfg *config.Config, next http.Handler) http.Handler {
 			if cfg.Debug {
 				level = slog.LevelDebug
 			}
+			path := r.URL.Path
+			if strings.HasPrefix(path, "/_app/") {
+				return
+			}
 
 			// Filter out noisy successful requests (2xx/3xx) when not debugging
 			if !cfg.Debug {
-				path := r.URL.Path
-
-				// Skip explicit background noise
 				if path == "/healthz" {
+					return
+				}
+				if path == "/config" && rw.statusCode == http.StatusOK {
 					return
 				}
 
 				// Skip static file spam
-				isAPI := strings.HasPrefix(path, "/api/") || path == "/config"
-				if r.Method == http.MethodGet && !isAPI {
+				isAPI := strings.HasPrefix(path, "/api/")
+				if r.Method == http.MethodGet && !isAPI && rw.statusCode < 400 && rw.size < 1024 {
 					return
 				}
 			}
