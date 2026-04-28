@@ -10,7 +10,7 @@
 
 **Tether** is the central hub for your distributed Traefik setup. It gathers information from all your servers and tells Traefik exactly how to route traffic to your apps.
 
-Think of it as a **central operator**: multiple servers (running [Tetherd](https://github.com/MizuchiLabs/tetherd)) tell Tether "I have these apps running," and Tether gives Traefik a single, master list of all of them.
+Think of it as a **central operator**: multiple servers (running [Tetherd](https://github.com/MizuchiLabs/tetherd)) tell Tether which apps are running, and Tether gives Traefik a single, master list of all of them.
 
 ## Why use Tether?
 
@@ -29,7 +29,7 @@ Imagine you have 3 servers, but only one public WAN connection.
 
 Tetherd on Server B/C tells Tether (on Server A) what is running. Traefik asks Tether for the config and magically knows to send `app1.com` to Server B and `app2.com` to Server C.
 
-## Quick Start (Server A)
+## Quick Start
 
 Run Tether using Docker Compose:
 
