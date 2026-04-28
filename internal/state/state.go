@@ -126,6 +126,7 @@ func (s *State) LoadLocalFile(env, path string) error {
 
 	envs := s.getEnv(env)
 	envs.Local = cfg
+	s.rebuildMaster(env)
 	return nil
 }
 
