@@ -1,31 +1,16 @@
 <script lang="ts">
-	import ConfigViewer from '$lib/components/ConfigViewer.svelte';
+	import Config from '$lib/components/Config.svelte';
 	import * as Select from '$lib/components/ui/select';
 	import * as Empty from '$lib/components/ui/empty';
 	import { Cloud } from '@lucide/svelte';
 	import { loggedIn } from '$lib/store.svelte';
+	import { api } from '$lib/api';
 
 	let envs = $state<string[]>([]);
 	let env = $state('');
 
-	async function fetchEnvs() {
-		try {
-			const res = await fetch('/api/envs');
-			if (res.ok) {
-				const data = await res.json();
-				envs = Array.isArray(data) ? data : [];
-
-				if (envs.length > 0 && !env) {
-					env = envs.includes('default') ? 'default' : envs[0];
-				}
-			} else {
-				loggedIn.current = false;
-			}
-		} catch (_) {}
-	}
-
 	$effect(() => {
-		if (loggedIn.current) fetchEnvs();
+		if (loggedIn.current) api.envs();
 	});
 </script>
 
@@ -38,25 +23,27 @@
 			</p>
 		</div>
 
-		<div class="flex items-center gap-4">
-			<span class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-				Environment
-			</span>
-			<Select.Root type="single" bind:value={env}>
-				<Select.Trigger class="w-40">
-					{env || 'Select...'}
-				</Select.Trigger>
-				<Select.Content>
-					{#each envs as env}
-						<Select.Item value={env}>{env}</Select.Item>
-					{/each}
-				</Select.Content>
-			</Select.Root>
-		</div>
+		{#if envs.length > 0}
+			<div class="flex items-center gap-4">
+				<span class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+					Environment
+				</span>
+				<Select.Root type="single" bind:value={env}>
+					<Select.Trigger class="w-40">
+						{env || 'Select...'}
+					</Select.Trigger>
+					<Select.Content>
+						{#each envs as env}
+							<Select.Item value={env}>{env}</Select.Item>
+						{/each}
+					</Select.Content>
+				</Select.Root>
+			</div>
+		{/if}
 	</div>
 
 	{#if env}
-		<ConfigViewer {env} />
+		<Config {env} />
 	{:else}
 		<Empty.Root class="border border-dashed max-h-80">
 			<Empty.Header>

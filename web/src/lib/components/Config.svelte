@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { api } from '$lib/api';
 	import { Button } from '$lib/components/ui/button';
 	import * as Empty from '$lib/components/ui/empty';
 	import * as Tabs from '$lib/components/ui/tabs';
@@ -23,16 +24,15 @@
 		});
 	});
 
-	async function fetchConfig(targetEnv: string) {
+	async function fetchConfig() {
+		if (!env) return;
 		isLoading = true;
 		error = '';
-		configData = null;
+
 		try {
-			const res = await fetch(`/config?env=${targetEnv}&format=json`);
-			if (!res.ok) throw new Error('Failed to fetch config');
-			configData = await res.json();
-		} catch (err) {
-			error = err instanceof Error ? err.message : 'Unknown error occurred';
+			configData = await api.config(env);
+		} catch (err: any) {
+			error = err.message || 'Failed to fetch configuration.';
 		} finally {
 			isLoading = false;
 		}
@@ -40,9 +40,10 @@
 
 	$effect(() => {
 		if (!env) return;
-		fetchConfig(env);
 
-		const eventSource = new EventSource(`/api/events?env=${env}`, { withCredentials: true });
+		fetchConfig();
+
+		const eventSource = api.events(env);
 		eventSource.onmessage = (event) => {
 			try {
 				configData = JSON.parse(event.data);
@@ -51,6 +52,7 @@
 				console.error('Failed to parse SSE data', err);
 			}
 		};
+
 		return () => {
 			eventSource.close();
 		};
@@ -66,12 +68,15 @@
 			return 'Error formatting configuration data.';
 		}
 	});
+
 	const isEmptyConfig = $derived.by(() => {
 		return configData && typeof configData === 'object' && Object.keys(configData).length === 0;
 	});
 
 	const codeHtml = $derived.by(() => {
 		if (!highlighter || !formattedText) return '';
+		if (formattedText === 'Error formatting configuration data.') return formattedText;
+
 		return highlighter.codeToHtml(formattedText, {
 			lang: lang.current,
 			themes: { light: 'catppuccin-latte', dark: 'catppuccin-macchiato' }
@@ -91,21 +96,21 @@
 		<Tabs.Root bind:value={lang.current}>
 			<Tabs.List>
 				<Tabs.Trigger value="yaml" class="gap-2">
-					<Code /> YAML
+					<Code class="size-4" /> YAML
 				</Tabs.Trigger>
 				<Tabs.Trigger value="json" class="gap-2">
-					<FileBraces /> JSON
+					<FileBraces class="size-4" /> JSON
 				</Tabs.Trigger>
 			</Tabs.List>
 		</Tabs.Root>
 
-		<Button variant="outline" onclick={() => fetchConfig(env)} disabled={isLoading}>
+		<Button variant="outline" onclick={fetchConfig} disabled={isLoading}>
 			<RefreshCw class={isLoading ? 'animate-spin' : ''} />
 			Refresh
 		</Button>
 	</div>
 
-	{#if isLoading}
+	{#if isLoading && !configData}
 		<Empty.Root class="border border-dashed max-h-80">
 			<Empty.Header>
 				<Empty.Media variant="icon">
@@ -113,6 +118,16 @@
 				</Empty.Media>
 				<Empty.Title>Loading configuration...</Empty.Title>
 				<Empty.Description>Fetching configuration from Tether.</Empty.Description>
+			</Empty.Header>
+		</Empty.Root>
+	{:else if error}
+		<Empty.Root class="border border-dashed max-h-80">
+			<Empty.Header>
+				<Empty.Media variant="icon" class="bg-destructive/30">
+					<Bug class="text-destructive" />
+				</Empty.Media>
+				<Empty.Title class="text-destructive">Error</Empty.Title>
+				<Empty.Description class="text-destructive/75">{error}</Empty.Description>
 			</Empty.Header>
 		</Empty.Root>
 	{:else if isEmptyConfig}
@@ -125,16 +140,6 @@
 				<Empty.Description>
 					Traefik returned an empty ruleset {'{}'} for this environment.
 				</Empty.Description>
-			</Empty.Header>
-		</Empty.Root>
-	{:else if error}
-		<Empty.Root class="border border-dashed max-h-80">
-			<Empty.Header>
-				<Empty.Media variant="icon" class="bg-destructive/30">
-					<Bug class="text-destructive" />
-				</Empty.Media>
-				<Empty.Title class="text-destructive">Error</Empty.Title>
-				<Empty.Description class="text-destructive/75">{error}</Empty.Description>
 			</Empty.Header>
 		</Empty.Root>
 	{:else if formattedText && codeHtml}

@@ -7,24 +7,18 @@
 	import { ModeWatcher, toggleMode } from 'mode-watcher';
 	import Login from '$lib/components/Login.svelte';
 	import { loggedIn } from '$lib/store.svelte';
+	import { api } from '$lib/api';
 
 	const { children } = $props();
 
 	onMount(async () => {
 		try {
-			const res = await fetch('/api/envs');
-			if (res.ok) {
-				loggedIn.current = true;
-			} else {
-				loggedIn.current = false;
-			}
-		} catch (_) {}
+			await api.envs();
+			loggedIn.current = true;
+		} catch (_) {
+			loggedIn.current = false;
+		}
 	});
-
-	async function logout() {
-		await fetch('/api/logout', { method: 'POST' });
-		loggedIn.current = false;
-	}
 </script>
 
 <ModeWatcher />
@@ -50,7 +44,7 @@
 						<span class="sr-only">Toggle theme</span>
 					</Button>
 
-					<Button variant="ghost" size="icon" onclick={logout} title="Log out">
+					<Button variant="ghost" size="icon" onclick={api.logout} title="Log out">
 						<LogOut />
 					</Button>
 				</div>

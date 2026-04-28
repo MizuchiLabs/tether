@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/mizuchilabs/tether/internal/util"
@@ -61,8 +60,6 @@ func Login(secret string) http.HandlerFunc {
 			http.Error(w, "Invalid request", http.StatusBadRequest)
 			return
 		}
-		fmt.Printf("secret: %v\n", secret)
-		fmt.Printf("req.Secret: %v\n", req.Secret)
 
 		// Verify the secret against your config
 		if secret != "" && req.Secret != secret {

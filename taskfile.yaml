@@ -13,7 +13,7 @@ tasks:
   backend:
     desc: Run backend
     cmds:
-      - go run . -s 123
+      - go run . -t 123
 
   frontend:
     desc: Run frontend
