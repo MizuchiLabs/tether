@@ -83,7 +83,6 @@ func (s *Server) registerServices(ctx context.Context) {
 	})
 
 	if !s.cfg.NoWeb {
-		// Apply security headers to frontend too, but allow slightly larger body if needed (or just use global)
 		s.mux.Handle("/", global.Then(statigz.FileServer(web.StaticFS, statigz.FSPrefix("build"))))
 	}
 
