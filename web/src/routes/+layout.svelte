@@ -43,10 +43,10 @@
 						<Button
 							variant="ghost"
 							onclick={api.logout}
-							class="h-9 gap-2 px-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive md:px-3"
+							class="gap-2 px-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive md:px-3"
 							title="Log out"
 						>
-							<LogOut class="h-[1.2rem] w-[1.2rem]" />
+							<LogOut />
 							<span class="hidden text-sm md:inline-block">Log out</span>
 						</Button>
 					</nav>
