@@ -40,7 +40,6 @@
 
 	$effect(() => {
 		if (!env) return;
-
 		fetchConfig();
 
 		const eventSource = api.events(env);
@@ -111,7 +110,7 @@
 	</div>
 
 	{#if isLoading && !configData}
-		<Empty.Root class="border border-dashed max-h-80">
+		<Empty.Root class="border border-dashed">
 			<Empty.Header>
 				<Empty.Media variant="icon">
 					<RefreshCw class="animate-spin" />
@@ -121,7 +120,7 @@
 			</Empty.Header>
 		</Empty.Root>
 	{:else if error}
-		<Empty.Root class="border border-dashed max-h-80">
+		<Empty.Root class="border border-dashed">
 			<Empty.Header>
 				<Empty.Media variant="icon" class="bg-destructive/30">
 					<Bug class="text-destructive" />
@@ -131,7 +130,7 @@
 			</Empty.Header>
 		</Empty.Root>
 	{:else if isEmptyConfig}
-		<Empty.Root class="border border-dashed max-h-80">
+		<Empty.Root class="border border-dashed">
 			<Empty.Header>
 				<Empty.Media variant="icon">
 					<FileBraces />

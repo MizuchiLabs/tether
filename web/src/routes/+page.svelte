@@ -30,7 +30,6 @@
 		}
 
 		pollEnvs();
-
 		return () => {
 			if (timeoutId) clearTimeout(timeoutId);
 		};
@@ -68,14 +67,15 @@
 	{#if env}
 		<Config {env} />
 	{:else}
-		<Empty.Root class="border border-dashed max-h-80">
+		<Empty.Root class="border border-dashed">
 			<Empty.Header>
 				<Empty.Media variant="icon">
 					<Cloud />
 				</Empty.Media>
 				<Empty.Title>Waiting for agents...</Empty.Title>
 				<Empty.Description>
-					Environments are discovered automatically when tetherd agents push their local configurations. Waiting for the first agent to connect...
+					Environments are discovered automatically when tetherd agents push their local
+					configurations. Waiting for the first agent to connect...
 				</Empty.Description>
 			</Empty.Header>
 		</Empty.Root>

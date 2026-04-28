@@ -1,13 +1,15 @@
 <script lang="ts">
-	import { RefreshCw } from '@lucide/svelte';
+	import { Eye, EyeOff, RefreshCw } from '@lucide/svelte';
 	import { Button } from '$lib/components/ui/button';
-	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
+	import * as InputGroup from '$lib/components/ui/input-group';
+
 	import { loggedIn } from '$lib/store.svelte';
 	import Logo from '$lib/assets/logo.svelte';
 	import { api } from '$lib/api';
 
 	let secret = $state('');
+	let showPassword = $state(false);
 	let isLoading = $state(false);
 	let error = $state<string | null>(null);
 
@@ -18,6 +20,7 @@
 		error = null;
 		try {
 			await api.login(secret);
+			secret = '';
 		} catch (err: any) {
 			error = err.message || 'Failed to sign in. Please check your token.';
 		} finally {
@@ -44,14 +47,25 @@
 				<div class="mt-6 space-y-6">
 					<div class="space-y-2">
 						<Label for="pwd" class="text-title text-sm">Access Token</Label>
-						<Input
-							bind:value={secret}
-							type="password"
-							required
-							name="pwd"
-							placeholder="e.g., your-secret-password"
-							disabled={isLoading}
-						/>
+						<InputGroup.Root>
+							<InputGroup.Input type={showPassword ? 'text' : 'password'} bind:value={secret} />
+							<InputGroup.Addon align="inline-end">
+								<InputGroup.Button
+									aria-label="Show password"
+									title="Show password"
+									variant="ghost"
+									size="icon-xs"
+									class="h-7 w-7"
+									onclick={() => (showPassword = !showPassword)}
+								>
+									{#if showPassword}
+										<Eye size={16} />
+									{:else}
+										<EyeOff size={16} />
+									{/if}
+								</InputGroup.Button>
+							</InputGroup.Addon>
+						</InputGroup.Root>
 						{#if error}
 							<p class="text-sm text-red-500">{error}</p>
 						{/if}
