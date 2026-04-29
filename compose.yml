@@ -4,6 +4,7 @@ services:
     container_name: tether
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      # - /path/to/dynamic.yml:/data/dynamic.yml # optional local config
     environment:
       - TETHER_SECRET=your-super-secret-key
     networks:
