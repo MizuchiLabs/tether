@@ -95,22 +95,22 @@ changelog:
       - "^docs"
   groups:
     - title: Features
-      regexp: '^feat(\(.+\))?!?:'
+      regexp: '^feat(\([^)]+\))?!?:'
       order: 0
     - title: Security
-      regexp: '^sec(\(.+\))?!?:'
+      regexp: '^sec(\([^)]+\))?!?:'
       order: 1
     - title: Bug Fixes
-      regexp: '^fix(\(.+\))?!?:'
+      regexp: '^fix(\([^)]+\))?!?:'
       order: 2
     - title: Performance
-      regexp: '^perf(\(.+\))?!?:'
+      regexp: '^perf(\([^)]+\))?!?:'
       order: 3
     - title: Refactor
-      regexp: '^refactor(\(.+\))?!?:'
+      regexp: '^refactor(\([^)]+\))?!?:'
       order: 4
     - title: Documentation
-      regexp: '^docs(\(.+\))?!?:'
+      regexp: '^docs(\([^)]+\))?!?:'
       order: 5
     - title: Other
       order: 999
