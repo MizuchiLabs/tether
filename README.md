@@ -71,6 +71,10 @@ providers:
 
 **Next Step:** Install [Tetherd](https://github.com/MizuchiLabs/tetherd) on your other servers to start connecting them!
 
+## Screenshot
+
+![Dashboard](./.github/screenshots/dashboard.png "Dashboard")
+
 ## License
 
 Apache 2.0 License - see [LICENSE](LICENSE) for details
