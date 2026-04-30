@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/mizuchilabs/tether/internal/state"
 )
@@ -16,10 +17,20 @@ func EventStream(ctx context.Context, state *state.State) http.HandlerFunc {
 		w.Header().Set("Connection", "keep-alive")
 
 		rc := http.NewResponseController(w)
+
+		// Clear the global write deadline for this long-lived connection
+		if err := rc.SetWriteDeadline(time.Time{}); err != nil {
+			http.Error(w, "Failed to configure SSE connection", http.StatusInternalServerError)
+			return
+		}
+
 		env := r.URL.Query().Get("env")
 
 		updateCh := state.Subscribe(env)
 		defer state.Unsubscribe(env, updateCh)
+
+		ping := time.NewTicker(15 * time.Second)
+		defer ping.Stop()
 
 		for {
 			select {
@@ -27,6 +38,9 @@ func EventStream(ctx context.Context, state *state.State) http.HandlerFunc {
 				return
 			case <-ctx.Done():
 				return
+			case <-ping.C: // Send a keep-alive ping
+				_, _ = fmt.Fprintf(w, ": ping\n\n")
+				_ = rc.Flush()
 			case newConfig := <-updateCh:
 				data, _ := json.Marshal(newConfig)
 				_, _ = fmt.Fprintf(w, "data: %s\n\n", data)
