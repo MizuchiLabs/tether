@@ -12,7 +12,6 @@ export async function client<T>(endpoint: string, options?: RequestInit): Promis
 
   if (!response.ok) {
     if (response.status === 401) loggedIn.current = false;
-    // Try to extract a useful error message from the backend if it exists
     const errorBody = await response.text();
     throw new Error(errorBody || `API Error: ${response.status} - ${response.statusText}`);
   }
@@ -20,7 +19,6 @@ export async function client<T>(endpoint: string, options?: RequestInit): Promis
   // Ensure the user is logged in if the request was successful
   if (!loggedIn.current) loggedIn.current = true;
 
-  // Safely handle empty responses (like 204 No Content)
   const text = await response.text();
   return (text ? JSON.parse(text) : undefined) as T;
 }

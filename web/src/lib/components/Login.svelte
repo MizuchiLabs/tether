@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { Eye, EyeOff, RefreshCw } from '@lucide/svelte';
 	import { Button } from '$lib/components/ui/button';
-	import { Label } from '$lib/components/ui/label';
 	import * as InputGroup from '$lib/components/ui/input-group';
+	import { Label } from '$lib/components/ui/label';
+	import { Eye, EyeOff, RefreshCw } from '@lucide/svelte';
 
-	import { loggedIn } from '$lib/store.svelte';
-	import Logo from '$lib/assets/logo.svelte';
 	import { api } from '$lib/api';
+	import Logo from '$lib/assets/logo.svelte';
+	import { loggedIn } from '$lib/store.svelte';
 
 	let secret = $state('');
 	let showPassword = $state(false);

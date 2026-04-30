@@ -22,6 +22,7 @@
 		SearchIcon,
 		WorkflowIcon
 	} from '@lucide/svelte';
+	import { dump as TOML } from 'js-toml';
 	import { createHighlighter } from 'shiki';
 	import { onMount } from 'svelte';
 	import YAML from 'yaml';
@@ -40,7 +41,7 @@
 	onMount(async () => {
 		highlighter = await createHighlighter({
 			themes: ['catppuccin-latte', 'catppuccin-macchiato'],
-			langs: ['json', 'yaml']
+			langs: ['json', 'yaml', 'toml']
 		});
 	});
 
@@ -156,9 +157,18 @@
 	const formatted = $derived.by(() => {
 		if (!filteredConfig) return '';
 		try {
-			return lang.current === 'json'
-				? JSON.stringify(filteredConfig, null, 2)
-				: YAML.stringify(filteredConfig, { indent: 2, lineWidth: 0, collectionStyle: 'block' });
+			switch (lang.current) {
+				case 'json':
+					return JSON.stringify(filteredConfig, null, 2);
+				case 'yaml':
+					return YAML.stringify(filteredConfig, {
+						indent: 2,
+						lineWidth: 0,
+						collectionStyle: 'block'
+					});
+				case 'toml':
+					return TOML(filteredConfig);
+			}
 		} catch {
 			return 'Error formatting configuration data.';
 		}
@@ -186,7 +196,18 @@
 	function handleDownload() {
 		if (!formatted) return;
 
-		const mimeType = lang.current === 'json' ? 'application/json' : 'application/yaml';
+		let mimeType = 'application/json';
+		switch (lang.current) {
+			case 'json':
+				mimeType = 'application/json';
+				break;
+			case 'yaml':
+				mimeType = 'application/yaml';
+				break;
+			case 'toml':
+				mimeType = 'application/toml';
+				break;
+		}
 		const blob = new Blob([formatted], { type: mimeType });
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement('a');
@@ -317,22 +338,16 @@
 			</div>
 
 			<div class="flex items-center rounded-lg bg-muted/50 p-0.5 border shadow-sm">
-				<button
-					class="rounded-md px-3 py-1 text-xs font-mono transition-all {lang.current === 'yaml'
-						? 'bg-card shadow-sm text-foreground'
-						: 'text-muted-foreground hover:text-foreground'}"
-					onclick={() => (lang.current = 'yaml')}
-				>
-					{env}.yaml
-				</button>
-				<button
-					class="rounded-md px-3 py-1 text-xs font-mono transition-all {lang.current === 'json'
-						? 'bg-card shadow-sm text-foreground'
-						: 'text-muted-foreground hover:text-foreground'}"
-					onclick={() => (lang.current = 'json')}
-				>
-					{env}.json
-				</button>
+				{#each ['yaml', 'json', 'toml'] as language}
+					<button
+						class="rounded-md px-3 py-1 text-xs font-mono transition-all {lang.current === language
+							? 'bg-card shadow-sm text-foreground'
+							: 'text-muted-foreground hover:text-foreground'}"
+						onclick={() => (lang.current = language)}
+					>
+						{env}.{language}
+					</button>
+				{/each}
 			</div>
 			<div class="flex items-center gap-1 w-24 justify-end text-muted-foreground">
 				<InputGroup.Button

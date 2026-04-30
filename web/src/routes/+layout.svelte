@@ -1,13 +1,13 @@
 <script lang="ts">
-	import './layout.css';
-	import { onMount } from 'svelte';
+	import { api } from '$lib/api';
 	import Logo from '$lib/assets/logo.svelte';
+	import Login from '$lib/components/Login.svelte';
 	import { Button } from '$lib/components/ui/button';
+	import { loggedIn } from '$lib/store.svelte';
 	import { LogOut, Moon, Sun } from '@lucide/svelte';
 	import { ModeWatcher, toggleMode } from 'mode-watcher';
-	import Login from '$lib/components/Login.svelte';
-	import { loggedIn } from '$lib/store.svelte';
-	import { api } from '$lib/api';
+	import { onMount } from 'svelte';
+	import './layout.css';
 
 	const { children } = $props();
 

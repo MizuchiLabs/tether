@@ -1,10 +1,10 @@
 <script lang="ts">
-	import Config from '$lib/components/Config.svelte';
-	import * as Select from '$lib/components/ui/select';
-	import * as Empty from '$lib/components/ui/empty';
-	import { Cloud } from '@lucide/svelte';
-	import { loggedIn } from '$lib/store.svelte';
 	import { api } from '$lib/api';
+	import Config from '$lib/components/Config.svelte';
+	import * as Empty from '$lib/components/ui/empty';
+	import * as Select from '$lib/components/ui/select';
+	import { loggedIn } from '$lib/store.svelte';
+	import { Cloud } from '@lucide/svelte';
 
 	let envs = $state<string[]>([]);
 	let env = $state('');
