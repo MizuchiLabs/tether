@@ -16,28 +16,20 @@ import (
 
 var ErrUnauthorized = errors.New("unauthorized")
 
-type AuthService struct {
-	secret string
-}
-
 type LoginRequest struct {
 	Secret string `json:"secret"`
 }
 
-func NewAuthService(secret string) *AuthService {
-	return &AuthService{secret: secret}
-}
-
-func (a *AuthService) WithAuth(next http.Handler) http.Handler {
+func (s *Server) WithAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if a.secret == "" {
+		if s.cfg.Token == "" {
 			next.ServeHTTP(w, r) // Authentication disabled
 			return
 		}
 
 		// Try standard token/cookie auth first (for Web UI & browsers)
 		token := util.GetAccessToken(r.Header)
-		if token != "" && subtle.ConstantTimeCompare([]byte(a.secret), []byte(token)) == 1 {
+		if token != "" && subtle.ConstantTimeCompare([]byte(s.cfg.Token), []byte(token)) == 1 {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -58,7 +50,7 @@ func (a *AuthService) WithAuth(next http.Handler) http.Handler {
 
 		r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 
-		mac := hmac.New(sha256.New, []byte(a.secret))
+		mac := hmac.New(sha256.New, []byte(s.cfg.Token))
 		mac.Write(bodyBytes)
 		expectedMAC := mac.Sum(nil)
 		providedMAC, err := hex.DecodeString(signatureHex)

@@ -68,7 +68,7 @@ func (s *Server) Start(ctx context.Context) error {
 }
 
 func (s *Server) registerServices(ctx context.Context) {
-	protec := NewChain(NewAuthService(s.cfg.Token).WithAuth)
+	protec := NewChain(s.WithAuth)
 
 	s.mux.Handle("POST /api/login", Login(s.cfg.Token))
 	s.mux.Handle("POST /api/logout", Logout())
