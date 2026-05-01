@@ -1,3 +1,4 @@
+// Package web embeds the web assets
 package web
 
 import (

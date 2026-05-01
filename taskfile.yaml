@@ -31,7 +31,7 @@ tasks:
     desc: Build binary
     cmds:
       - go generate ./...
-      - go build -ldflags="-s -w" -trimpath -o bin/tether
+      - go build -ldflags="-s -w" -trimpath -o tether
 
   lint:
     desc: Run go vet & lint
