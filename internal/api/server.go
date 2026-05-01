@@ -30,9 +30,15 @@ func New(cfg *config.Config) *Server {
 func (s *Server) Start(ctx context.Context) error {
 	s.registerServices(ctx)
 
+	chain := NewChain(
+		s.WithLogger,
+		WithRateLimit,
+		WithBodyLimit,
+		WithSecurityHeaders,
+	)
 	server := &http.Server{
 		Addr:              ":" + s.cfg.Port,
-		Handler:           WithLogger(s.cfg, s.mux),
+		Handler:           chain.Then(s.mux),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      30 * time.Second,
@@ -62,17 +68,10 @@ func (s *Server) Start(ctx context.Context) error {
 }
 
 func (s *Server) registerServices(ctx context.Context) {
-	global := NewChain(
-		WithRateLimit(),
-		WithBodyLimit,
-		WithSecurityHeaders,
-	)
+	protec := NewChain(NewAuthService(s.cfg.Token).WithAuth)
 
-	// Auth chain builds on global chain
-	protec := NewChain(append(global.constructors, NewAuthService(s.cfg.Token).WithAuth)...)
-
-	s.mux.Handle("POST /api/login", global.ThenFunc(Login(s.cfg.Token)))
-	s.mux.Handle("POST /api/logout", global.ThenFunc(Logout()))
+	s.mux.Handle("POST /api/login", Login(s.cfg.Token))
+	s.mux.Handle("POST /api/logout", Logout())
 	s.mux.Handle("POST /api/heartbeat", protec.ThenFunc(Heartbeat(s.cfg.State)))
 	s.mux.Handle("GET /api/events", protec.ThenFunc(EventStream(ctx, s.cfg.State)))
 	s.mux.Handle("GET /api/envs", protec.ThenFunc(PublishEnvs(s.cfg.State)))
@@ -83,7 +82,7 @@ func (s *Server) registerServices(ctx context.Context) {
 	})
 
 	if !s.cfg.NoWeb {
-		s.mux.Handle("/", global.Then(statigz.FileServer(web.StaticFS, statigz.FSPrefix("build"))))
+		s.mux.Handle("/", statigz.FileServer(web.StaticFS, statigz.FSPrefix("build")))
 	}
 
 	if s.cfg.Debug {

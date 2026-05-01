@@ -45,7 +45,7 @@ func WithSecurityHeaders(next http.Handler) http.Handler {
 }
 
 // WithRateLimit creates a simple IP-based rate limiter middleware.
-func WithRateLimit() Constructor {
+func WithRateLimit(next http.Handler) http.Handler {
 	type client struct {
 		limiter  *rate.Limiter
 		lastSeen time.Time
@@ -70,31 +70,29 @@ func WithRateLimit() Constructor {
 		}
 	}()
 
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ip, _, err := net.SplitHostPort(r.RemoteAddr)
-			if err != nil {
-				ip = r.RemoteAddr
-			}
-			// Handle proxies
-			if fwd := r.Header.Get("X-Forwarded-For"); fwd != "" {
-				ips := strings.Split(fwd, ",")
-				ip = strings.TrimSpace(ips[0])
-			}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ip, _, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			ip = r.RemoteAddr
+		}
+		// Handle proxies
+		if fwd := r.Header.Get("X-Forwarded-For"); fwd != "" {
+			ips := strings.Split(fwd, ",")
+			ip = strings.TrimSpace(ips[0])
+		}
 
-			mu.Lock()
-			if _, found := clients[ip]; !found {
-				clients[ip] = &client{limiter: rate.NewLimiter(RPS, Burst)}
-			}
-			clients[ip].lastSeen = time.Now()
-			if !clients[ip].limiter.Allow() {
-				mu.Unlock()
-				http.Error(w, "Too many requests", http.StatusTooManyRequests)
-				return
-			}
+		mu.Lock()
+		if _, found := clients[ip]; !found {
+			clients[ip] = &client{limiter: rate.NewLimiter(RPS, Burst)}
+		}
+		clients[ip].lastSeen = time.Now()
+		if !clients[ip].limiter.Allow() {
 			mu.Unlock()
+			http.Error(w, "Too many requests", http.StatusTooManyRequests)
+			return
+		}
+		mu.Unlock()
 
-			next.ServeHTTP(w, r)
-		})
-	}
+		next.ServeHTTP(w, r)
+	})
 }

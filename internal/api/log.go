@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"strings"
 	"time"
-
-	"github.com/mizuchilabs/tether/internal/config"
 )
 
 // responseWriter wraps http.ResponseWriter to capture the status code and size.
@@ -39,7 +37,7 @@ func (rw *responseWriter) Unwrap() http.ResponseWriter {
 	return rw.ResponseWriter
 }
 
-func WithLogger(cfg *config.Config, next http.Handler) http.Handler {
+func (s *Server) WithLogger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		rw := &responseWriter{ResponseWriter: w, statusCode: http.StatusOK}
@@ -57,7 +55,7 @@ func WithLogger(cfg *config.Config, next http.Handler) http.Handler {
 			level = slog.LevelWarn
 		default:
 			level = slog.LevelInfo
-			if cfg.Debug {
+			if s.cfg.Debug {
 				level = slog.LevelDebug
 			}
 			path := r.URL.Path
@@ -66,7 +64,7 @@ func WithLogger(cfg *config.Config, next http.Handler) http.Handler {
 			}
 
 			// Filter out noisy successful requests (2xx/3xx) when not debugging
-			if !cfg.Debug {
+			if !s.cfg.Debug {
 				if path == "/healthz" {
 					return
 				}
