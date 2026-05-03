@@ -3,13 +3,10 @@ package api
 import (
 	"crypto/subtle"
 	"encoding/json"
-	"errors"
 	"net/http"
 
 	"github.com/mizuchilabs/tether/internal/util"
 )
-
-var ErrUnauthorized = errors.New("unauthorized")
 
 type LoginRequest struct {
 	Secret string `json:"secret"`
