@@ -72,7 +72,7 @@ func (s *Server) registerServices(ctx context.Context) {
 
 	s.mux.Handle("POST /api/login", Login(s.cfg.Token))
 	s.mux.Handle("POST /api/logout", Logout())
-	s.mux.Handle("POST /api/heartbeat", protec.ThenFunc(Heartbeat(s.cfg.State)))
+	s.mux.Handle("GET /api/ws", protec.ThenFunc(AgentWS(s.cfg.State)))
 	s.mux.Handle("GET /api/events", protec.ThenFunc(EventStream(ctx, s.cfg.State)))
 	s.mux.Handle("GET /api/envs", protec.ThenFunc(PublishEnvs(s.cfg.State)))
 	s.mux.Handle("GET /config", protec.ThenFunc(PublishConfig(s.cfg.State)))

@@ -1,14 +1,9 @@
 package api
 
 import (
-	"bytes"
-	"crypto/hmac"
-	"crypto/sha256"
 	"crypto/subtle"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"io"
 	"net/http"
 
 	"github.com/mizuchilabs/tether/internal/util"
@@ -27,45 +22,13 @@ func (s *Server) WithAuth(next http.Handler) http.Handler {
 			return
 		}
 
-		// Try standard token/cookie auth first (for Web UI & browsers)
 		token := util.GetAccessToken(r.Header)
 		if token != "" && subtle.ConstantTimeCompare([]byte(s.cfg.Token), []byte(token)) == 1 {
 			next.ServeHTTP(w, r)
 			return
 		}
 
-		// Fall back to Agent HMAC authentication
-		signatureHex := r.Header.Get("X-Signature")
-		if signatureHex == "" {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
-
-		// Read the body to calculate the hash
-		bodyBytes, err := io.ReadAll(r.Body)
-		if err != nil {
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			return
-		}
-
-		r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
-
-		mac := hmac.New(sha256.New, []byte(s.cfg.Token))
-		mac.Write(bodyBytes)
-		expectedMAC := mac.Sum(nil)
-		providedMAC, err := hex.DecodeString(signatureHex)
-		if err != nil {
-			http.Error(w, "Invalid signature format", http.StatusBadRequest)
-			return
-		}
-
-		// Compare the signatures
-		if !hmac.Equal(providedMAC, expectedMAC) {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
-
-		next.ServeHTTP(w, r)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 	})
 }
 
