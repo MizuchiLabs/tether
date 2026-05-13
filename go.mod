@@ -5,7 +5,7 @@ go 1.26.1
 require (
 	github.com/coder/websocket v1.8.14
 	github.com/traefik/traefik/v3 v3.6.17
-	github.com/urfave/cli/v3 v3.8.0
+	github.com/urfave/cli/v3 v3.9.0
 	github.com/vearutop/statigz v1.5.0
 	go.yaml.in/yaml/v3 v3.0.4
 	golang.org/x/time v0.15.0
