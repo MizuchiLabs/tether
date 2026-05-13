@@ -36,7 +36,7 @@
 	});
 </script>
 
-<div class="mx-auto w-full max-w-5xl flex-1 flex flex-col gap-6">
+<div class="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6">
 	<div class="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
 		<div>
 			<h2 class="text-2xl font-bold tracking-tight">Environment Explorer</h2>
@@ -47,7 +47,7 @@
 
 		{#if envs.length > 0}
 			<div class="flex items-center gap-4">
-				<span class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+				<span class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
 					Environment
 				</span>
 				<Select.Root type="single" bind:value={env}>

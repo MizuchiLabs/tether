@@ -322,26 +322,26 @@
 	</Empty.Root>
 {:else if formatted && codeHtml}
 	<InputGroup.Root
-		class="relative flex-1 overflow-hidden rounded-xl border shadow-sm bg-card group"
+		class="group relative flex-1 overflow-hidden rounded-xl border bg-card shadow-sm"
 	>
 		<InputGroup.Addon align="block-start" class="flex h-10 items-center justify-between border-b">
-			<div class="flex items-center gap-1.5 w-24">
+			<div class="flex w-24 items-center gap-1.5">
 				<div
-					class="size-3 rounded-full bg-red-500/80 border border-black/10 dark:border-white/10"
+					class="size-3 rounded-full border border-black/10 bg-red-500/80 dark:border-white/10"
 				></div>
 				<div
-					class="size-3 rounded-full bg-yellow-500/80 border border-black/10 dark:border-white/10"
+					class="size-3 rounded-full border border-black/10 bg-yellow-500/80 dark:border-white/10"
 				></div>
 				<div
-					class="size-3 rounded-full bg-green-500/80 border border-black/10 dark:border-white/10"
+					class="size-3 rounded-full border border-black/10 bg-green-500/80 dark:border-white/10"
 				></div>
 			</div>
 
-			<div class="flex items-center rounded-lg bg-muted/50 p-0.5 border shadow-sm">
+			<div class="flex items-center rounded-lg border bg-muted/50 p-0.5 shadow-sm">
 				{#each ['yaml', 'json', 'toml'] as language}
 					<button
-						class="rounded-md px-3 py-1 text-xs font-mono transition-all {lang.current === language
-							? 'bg-card shadow-sm text-foreground'
+						class="rounded-md px-3 py-1 font-mono text-xs transition-all {lang.current === language
+							? 'bg-card text-foreground shadow-sm'
 							: 'text-muted-foreground hover:text-foreground'}"
 						onclick={() => (lang.current = language)}
 					>
@@ -349,7 +349,7 @@
 					</button>
 				{/each}
 			</div>
-			<div class="flex items-center gap-1 w-24 justify-end text-muted-foreground">
+			<div class="flex w-24 items-center justify-end gap-1 text-muted-foreground">
 				<InputGroup.Button
 					aria-label="Copy"
 					title="Copy"
@@ -373,7 +373,7 @@
 			</div>
 		</InputGroup.Addon>
 		<InputGroup.Text
-			class="w-full text-left items-start justify-start h-full overflow-auto px-4 py-2 text-sm leading-relaxed shiki-container"
+			class="shiki-container h-full w-full items-start justify-start overflow-auto px-4 py-2 text-left text-sm leading-relaxed"
 		>
 			{@html codeHtml}
 		</InputGroup.Text>
