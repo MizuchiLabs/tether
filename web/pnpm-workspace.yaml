@@ -1,4 +1,0 @@
-onlyBuiltDependencies:
-  - esbuild
-  - '@tailwindcss/oxide'
-  - 'core-js-pure'
