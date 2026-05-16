@@ -15,8 +15,11 @@ on:
       - "**/*.ts"
       - "**/*.svelte"
       - "**/*.go"
+      - "**/package.json"
+      - "**/pnpm-lock.yaml"
       - "go.mod"
       - "go.sum"
+      - ".github/workflows/**"
   workflow_dispatch:
 
 jobs:
