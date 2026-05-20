@@ -1,2 +1,6 @@
-onlyBuiltDependencies:
-  - core-js-pure
+allowBuilds:
+  core-js-pure: true
+minimumReleaseAgeExclude:
+  - '@sveltejs/acorn-typescript@1.0.10'
+  - '@types/node@25.9.1'
+  - svelte@5.55.9
