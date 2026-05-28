@@ -53,7 +53,7 @@ importers:
         version: 2.1.1
       js-toml:
         specifier: ^1.1.0
-        version: 1.1.0
+        version: 1.1.2
       mode-watcher:
         specifier: ^1.1.0
         version: 1.1.0(svelte@5.55.9)
@@ -102,8 +102,8 @@ importers:
 
 packages:
 
-  '@babel/runtime-corejs3@7.29.2':
-    resolution: {integrity: sha512-Lc94FOD5+0aXhdb0Tdg3RUtqT6yWbI/BbFWvlaSJ3gAb9Ks+99nHRDKADVqC37er4eCB0fHyWT+y+K3QOvJKbw==}
+  '@babel/runtime-corejs3@7.29.7':
+    resolution: {integrity: sha512-ppj9ouYku+RX0ljtgZd+KMO5mkM2bCqg8H2PYAFWnLsHEIKIdRojqbJ2i3eVHrisuxy7nOFCmngTDdWtUCdXUQ==}
     engines: {node: '>=6.9.0'}
 
   '@chevrotain/cst-dts-gen@12.0.0':
@@ -925,8 +925,8 @@ packages:
     resolution: {integrity: sha512-AC/7JofJvZGrrneWNaEnJeOLUx+JlGt7tNa0wZiRPT4MY1wmfKjt2+6O2p2uz2+skll8OZZmJMNqeke7kKbNgQ==}
     hasBin: true
 
-  js-toml@1.1.0:
-    resolution: {integrity: sha512-ttRqC9rcSsV7diH6CsneXqDJWb0l9Guv2dA/0a3SQwdldCk6qsXN4O7Tg5UQevove7CXaYCcsqBn9wEQiIM3ZQ==}
+  js-toml@1.1.2:
+    resolution: {integrity: sha512-noryT8sUWOuqWKfU5mNWZXBp5PUS9rkz6w3/EQcptJZBTVhgBD8j5/u6x+HWrWxoNn9hUYmuy8GYyT4NdvOHRg==}
 
   kleur@4.1.5:
     resolution: {integrity: sha512-o+NO+8WrRiQEE4/7nwRJhN1HWpVmJm511pBHUxPLtp0BUISzlBplORYSmTclCnJvQq2tKu/sgl3xVpkc7ZWuQQ==}
@@ -1356,7 +1356,7 @@ packages:
 
 snapshots:
 
-  '@babel/runtime-corejs3@7.29.2':
+  '@babel/runtime-corejs3@7.29.7':
     dependencies:
       core-js-pure: 3.49.0
 
@@ -1950,7 +1950,7 @@ snapshots:
 
   jiti@2.7.0: {}
 
-  js-toml@1.1.0:
+  js-toml@1.1.2:
     dependencies:
       chevrotain: 12.0.0
       xregexp: 5.1.2
@@ -2382,7 +2382,7 @@ snapshots:
 
   xregexp@5.1.2:
     dependencies:
-      '@babel/runtime-corejs3': 7.29.2
+      '@babel/runtime-corejs3': 7.29.7
 
   yaml@2.9.0: {}
 
