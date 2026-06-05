@@ -74,43 +74,14 @@ checksum:
 source:
   enabled: true
 
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
 release:
   draft: false
   replace_existing_draft: true
   replace_existing_artifacts: true
-  mode: keep-existing
-
-snapshot:
-  version_template: "{{ incpatch .Version }}-next"
+  mode: append
 
 changelog:
-  sort: asc
-  filters:
-    include:
-      - "^feat"
-      - "^fix"
-      - "^sec"
-      - "^perf"
-      - "^refactor"
-      - "^docs"
-  groups:
-    - title: Features
-      regexp: '^feat(\([^)]+\))?!?:'
-      order: 0
-    - title: Security
-      regexp: '^sec(\([^)]+\))?!?:'
-      order: 1
-    - title: Bug Fixes
-      regexp: '^fix(\([^)]+\))?!?:'
-      order: 2
-    - title: Performance
-      regexp: '^perf(\([^)]+\))?!?:'
-      order: 3
-    - title: Refactor
-      regexp: '^refactor(\([^)]+\))?!?:'
-      order: 4
-    - title: Documentation
-      regexp: '^docs(\([^)]+\))?!?:'
-      order: 5
-    - title: Other
-      order: 999
+  disable: true
