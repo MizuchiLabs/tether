@@ -30,7 +30,6 @@ jobs:
           go-version-file: "go.mod"
 
       - name: Setup Node.js
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         uses: actions/setup-node@v6
         with:
           node-version: "lts/*"
@@ -51,13 +50,6 @@ jobs:
       - uses: pnpm/action-setup@v6
         with:
           version: latest
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: "pnpm"
-          cache-dependency-path: "web/pnpm-lock.yaml"
 
       - name: Build frontend
         working-directory: web
