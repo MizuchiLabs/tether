@@ -8,6 +8,7 @@
     ":maintainLockFilesWeekly"
   ],
   "postUpdateOptions": ["gomodTidy", "gomodUpdateImportPaths"],
+  "timezone": "Europe/Vienna",
   "packageRules": [
     {
       "matchPackagePatterns": ["*"],
