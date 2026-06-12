@@ -70,6 +70,11 @@ jobs:
         with:
           args: -exclude-generated ./...
 
+      - name: Check if module is tidy
+        run: |
+          go mod tidy
+          git diff --exit-code go.mod go.sum || (echo "go.mod/go.sum is not tidy. Please run 'go mod tidy' and commit the changes." && exit 1)
+
       - name: Verify build
         if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         uses: goreleaser/goreleaser-action@v7
