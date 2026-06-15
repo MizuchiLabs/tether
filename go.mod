@@ -3,7 +3,7 @@ module github.com/mizuchilabs/tether
 go 1.26.2
 
 require (
-	github.com/coder/websocket v1.8.14
+	github.com/coder/websocket v1.8.15
 	github.com/traefik/traefik/v3 v3.7.5
 	github.com/urfave/cli/v3 v3.10.0
 	github.com/vearutop/statigz v1.5.0
