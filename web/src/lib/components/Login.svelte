@@ -3,7 +3,6 @@
 	import * as InputGroup from '$lib/components/ui/input-group';
 	import { Label } from '$lib/components/ui/label';
 	import { Eye, EyeOff, RefreshCw } from '@lucide/svelte';
-
 	import { api } from '$lib/api';
 	import Logo from '$lib/assets/logo.svelte';
 	import { loggedIn } from '$lib/store.svelte';
@@ -44,8 +43,8 @@
 					<p class="text-sm">Enter your shared secret token to view agent configurations.</p>
 				</div>
 
-				<div class="mt-6 space-y-6">
-					<div class="space-y-2">
+				<div class="mt-6 flex flex-col gap-6">
+					<div class="flex flex-col gap-2">
 						<Label for="pwd" class="text-title text-sm">Access Token</Label>
 						<InputGroup.Root>
 							<InputGroup.Input type={showPassword ? 'text' : 'password'} bind:value={secret} />
@@ -55,25 +54,25 @@
 									title="Show password"
 									variant="ghost"
 									size="icon-xs"
-									class="h-7 w-7"
+									class="size-7"
 									onclick={() => (showPassword = !showPassword)}
 								>
 									{#if showPassword}
-										<Eye size={16} />
+										<Eye data-icon="inline-start" />
 									{:else}
-										<EyeOff size={16} />
+										<EyeOff data-icon="inline-start" />
 									{/if}
 								</InputGroup.Button>
 							</InputGroup.Addon>
 						</InputGroup.Root>
 						{#if error}
-							<p class="text-sm text-red-500">{error}</p>
+							<p class="text-sm text-destructive">{error}</p>
 						{/if}
 					</div>
 
 					<Button type="submit" disabled={isLoading} class="w-full">
 						{#if isLoading}
-							<RefreshCw class="animate-spin" />
+							<RefreshCw class="animate-spin" data-icon="inline-start" />
 							Verifying...
 						{:else}
 							Sign In

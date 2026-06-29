@@ -6,7 +6,7 @@
 	import { loggedIn } from '$lib/store.svelte';
 	import { Cloud } from '@lucide/svelte';
 
-	let envs = $state<string[]>([]);
+	let envs = $state.raw<string[]>([]);
 	let env = $state('');
 
 	$effect(() => {
@@ -23,9 +23,11 @@
 					if (!env) {
 						env = envs.includes('default') ? 'default' : envs[0];
 					}
-					return; // Stop polling once an environment is available
+					return;
 				}
-			} catch (_) {}
+			} catch {
+				// ignore
+			}
 			timeoutId = window.setTimeout(pollEnvs, 5000);
 		}
 
@@ -55,8 +57,8 @@
 						{env || 'Select...'}
 					</Select.Trigger>
 					<Select.Content>
-						{#each envs as env}
-							<Select.Item value={env}>{env}</Select.Item>
+						{#each envs as item (item)}
+							<Select.Item value={item}>{item}</Select.Item>
 						{/each}
 					</Select.Content>
 				</Select.Root>

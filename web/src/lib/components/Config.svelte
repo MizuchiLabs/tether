@@ -6,6 +6,7 @@
 	import * as InputGroup from '$lib/components/ui/input-group';
 	import { UseClipboard } from '$lib/hooks/use-clipboard.svelte';
 	import { lang } from '$lib/store.svelte';
+	import { cn } from '$lib/utils';
 	import {
 		Bug,
 		CheckIcon,
@@ -24,12 +25,11 @@
 	} from '@lucide/svelte';
 	import { dump as TOML } from 'js-toml';
 	import { createHighlighter } from 'shiki';
-	import { onMount } from 'svelte';
 	import YAML from 'yaml';
 
 	let { env }: { env: string } = $props();
 
-	let config = $state<any>(null);
+	let config = $state.raw<any>(null);
 	let isLoading = $state(false);
 	let error = $state('');
 	let highlighter = $state<Awaited<ReturnType<typeof createHighlighter>> | null>(null);
@@ -38,10 +38,12 @@
 
 	const clipboard = new UseClipboard();
 
-	onMount(async () => {
-		highlighter = await createHighlighter({
+	$effect(() => {
+		createHighlighter({
 			themes: ['catppuccin-latte', 'catppuccin-macchiato'],
 			langs: ['json', 'yaml', 'toml']
+		}).then((h) => {
+			highlighter = h;
 		});
 	});
 
@@ -81,7 +83,6 @@
 	const filteredConfig = $derived.by(() => {
 		if (!config) return null;
 
-		// Deep clone to avoid mutating the original config state
 		let result = JSON.parse(JSON.stringify(config));
 
 		const query = search.trim().toLowerCase();
@@ -90,13 +91,10 @@
 		protocols.forEach((proto) => {
 			if (!result[proto]) return;
 
-			// Apply Category Filter
 			if (filter !== 'all') {
 				if (filter === 'tls') {
-					// If filtering by TLS, delete http/tcp/udp
 					protocols.forEach((p) => delete result[p]);
 				} else {
-					// If filtering by routers/services/middlewares, delete TLS entirely
 					delete result.tls;
 
 					protocols.forEach((proto) => {
@@ -108,7 +106,6 @@
 				}
 			}
 
-			// Apply Text Search (Matches the name of the router/middleware/service)
 			if (query) {
 				protocols.forEach((proto) => {
 					if (!result[proto]) return;
@@ -116,7 +113,6 @@
 					const categories = ['routers', 'middlewares', 'services'];
 					categories.forEach((category) => {
 						if (result[proto][category]) {
-							// Filter entries by matching the key against the search query
 							const filteredEntries = Object.entries(result[proto][category]).filter(([key]) =>
 								key.toLowerCase().includes(query)
 							);
@@ -124,19 +120,16 @@
 							if (filteredEntries.length > 0) {
 								result[proto][category] = Object.fromEntries(filteredEntries);
 							} else {
-								// Remove empty categories
 								delete result[proto][category];
 							}
 						}
 					});
 
-					// Clean up empty protocols
 					if (Object.keys(result[proto]).length === 0) {
 						delete result[proto];
 					}
 				});
 
-				// Apply search to TLS (simple string match for anything inside TLS)
 				if (result.tls) {
 					const tlsString = JSON.stringify(result.tls).toLowerCase();
 					if (!tlsString.includes(query)) {
@@ -174,14 +167,9 @@
 		}
 	});
 
-	// Check if the original config is empty, or if our filter results in an empty object
-	const isEmpty = $derived.by(() => {
-		return (
-			filteredConfig &&
-			typeof filteredConfig === 'object' &&
-			Object.keys(filteredConfig).length === 0
-		);
-	});
+	const isEmpty = $derived(
+		filteredConfig && typeof filteredConfig === 'object' && Object.keys(filteredConfig).length === 0
+	);
 
 	const codeHtml = $derived.by(() => {
 		if (!highlighter || !formatted) return '';
@@ -198,9 +186,6 @@
 
 		let mimeType = 'application/json';
 		switch (lang.current) {
-			case 'json':
-				mimeType = 'application/json';
-				break;
 			case 'yaml':
 				mimeType = 'application/yaml';
 				break;
@@ -228,12 +213,12 @@
 				<InputGroup.Addon align="inline-end">
 					{#if search}
 						<InputGroup.Button variant="ghost" size="icon-xs" onclick={() => (search = '')}>
-							<DeleteIcon />
+							<DeleteIcon data-icon="inline-start" />
 						</InputGroup.Button>
 					{/if}
 				</InputGroup.Addon>
 				<InputGroup.Addon>
-					<SearchIcon />
+					<SearchIcon data-icon="inline-start" />
 				</InputGroup.Addon>
 			</InputGroup.Root>
 
@@ -241,7 +226,7 @@
 				<DropdownMenu.Trigger>
 					{#snippet child({ props })}
 						<Button {...props} variant="outline">
-							<FunnelIcon />
+							<FunnelIcon data-icon="inline-start" />
 							<span class="capitalize">{filter}</span>
 						</Button>
 					{/snippet}
@@ -250,23 +235,23 @@
 					<DropdownMenu.Group>
 						<DropdownMenu.RadioGroup bind:value={filter}>
 							<DropdownMenu.RadioItem value="all">
-								<GlobeIcon />
+								<GlobeIcon data-icon="inline-start" />
 								All
 							</DropdownMenu.RadioItem>
 							<DropdownMenu.RadioItem value="routers">
-								<RouteIcon />
+								<RouteIcon data-icon="inline-start" />
 								Routers
 							</DropdownMenu.RadioItem>
 							<DropdownMenu.RadioItem value="services">
-								<WorkflowIcon />
+								<WorkflowIcon data-icon="inline-start" />
 								Services
 							</DropdownMenu.RadioItem>
 							<DropdownMenu.RadioItem value="middlewares">
-								<Layers2Icon />
+								<Layers2Icon data-icon="inline-start" />
 								Middlewares
 							</DropdownMenu.RadioItem>
 							<DropdownMenu.RadioItem value="tls">
-								<LockIcon />
+								<LockIcon data-icon="inline-start" />
 								TLS
 							</DropdownMenu.RadioItem>
 						</DropdownMenu.RadioGroup>
@@ -277,7 +262,7 @@
 	</div>
 
 	<Button variant="outline" onclick={fetchConfig} disabled={isLoading}>
-		<RefreshCw class={isLoading ? 'animate-spin' : ''} />
+		<RefreshCw class={{ 'animate-spin': isLoading }} data-icon="inline-start" />
 		Refresh
 	</Button>
 </div>
@@ -324,7 +309,10 @@
 	<InputGroup.Root
 		class="group relative flex-1 overflow-hidden rounded-xl border bg-card shadow-sm"
 	>
-		<InputGroup.Addon align="block-start" class="flex h-10 items-center justify-between border-b">
+		<InputGroup.Addon
+			align="block-start"
+			class="flex h-10 items-center justify-between border-b border-muted"
+		>
 			<div class="flex w-24 items-center gap-1.5">
 				<div
 					class="size-3 rounded-full border border-black/10 bg-red-500/80 dark:border-white/10"
@@ -337,12 +325,15 @@
 				></div>
 			</div>
 
-			<div class="flex items-center rounded-lg border bg-muted/50 p-0.5 shadow-sm">
-				{#each ['yaml', 'json', 'toml'] as language}
+			<div class="flex items-center rounded-full bg-muted p-0.5">
+				{#each ['yaml', 'json', 'toml'] as language (language)}
 					<button
-						class="rounded-md px-3 py-1 font-mono text-xs transition-all {lang.current === language
-							? 'bg-card text-foreground shadow-sm'
-							: 'text-muted-foreground hover:text-foreground'}"
+						class={cn(
+							'rounded-full px-3 py-1 font-mono text-xs transition-all',
+							lang.current === language
+								? 'bg-card text-foreground'
+								: 'text-muted-foreground hover:text-foreground'
+						)}
 						onclick={() => (lang.current = language)}
 					>
 						{env}.{language}
@@ -357,9 +348,9 @@
 					onclick={() => clipboard.copy(formatted)}
 				>
 					{#if clipboard.copied}
-						<CheckIcon />
+						<CheckIcon data-icon="inline-start" />
 					{:else}
-						<CopyIcon />
+						<CopyIcon data-icon="inline-start" />
 					{/if}
 				</InputGroup.Button>
 				<InputGroup.Button
@@ -368,7 +359,7 @@
 					size="icon-xs"
 					onclick={handleDownload}
 				>
-					<DownloadIcon />
+					<DownloadIcon data-icon="inline-start" />
 				</InputGroup.Button>
 			</div>
 		</InputGroup.Addon>
