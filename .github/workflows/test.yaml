@@ -59,11 +59,6 @@ jobs:
         with:
           args: --timeout=10m
 
-      - name: Run security checks
-        uses: securego/gosec@master
-        with:
-          args: -exclude-generated ./...
-
       - name: Build
         run: |
           go build -ldflags="-s -w" -o bin/

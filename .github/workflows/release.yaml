@@ -65,10 +65,9 @@ jobs:
         with:
           args: --timeout=10m
 
-      - name: Run security checks
-        uses: securego/gosec@master
+      - uses: golang/govulncheck-action@v1
         with:
-          args: -exclude-generated ./...
+          repo-checkout: false
 
       - name: Check if module is tidy
         run: |
