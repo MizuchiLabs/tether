@@ -43,18 +43,17 @@
 					<p class="text-sm">Enter your shared secret token to view agent configurations.</p>
 				</div>
 
-				<div class="mt-6 flex flex-col gap-6">
+				<div class="mt-6 flex flex-col gap-4">
 					<div class="flex flex-col gap-2">
 						<Label for="pwd" class="text-title text-sm">Access Token</Label>
 						<InputGroup.Root>
 							<InputGroup.Input type={showPassword ? 'text' : 'password'} bind:value={secret} />
 							<InputGroup.Addon align="inline-end">
-								<InputGroup.Button
+								<Button
 									aria-label="Show password"
 									title="Show password"
 									variant="ghost"
-									size="icon-xs"
-									class="size-7"
+									size="icon-sm"
 									onclick={() => (showPassword = !showPassword)}
 								>
 									{#if showPassword}
@@ -62,7 +61,7 @@
 									{:else}
 										<EyeOff data-icon="inline-start" />
 									{/if}
-								</InputGroup.Button>
+								</Button>
 							</InputGroup.Addon>
 						</InputGroup.Root>
 						{#if error}
