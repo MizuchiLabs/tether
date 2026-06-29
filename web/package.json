@@ -15,11 +15,11 @@
 		"lint": "oxlint --fix"
 	},
 	"dependencies": {
-		"@fontsource-variable/manrope": "^5.2.8",
 		"@fontsource-variable/victor-mono": "^5.2.8",
 		"runed": "^0.37.1"
 	},
 	"devDependencies": {
+		"@fontsource-variable/manrope": "^5.2.8",
 		"@internationalized/date": "^3.12.2",
 		"@lucide/svelte": "^1.21.0",
 		"@sveltejs/adapter-static": "^3.0.10",
