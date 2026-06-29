@@ -39,7 +39,7 @@ func (s *Server) Start(ctx context.Context) error {
 		WithSecurityHeaders,
 	)
 	server := &http.Server{
-		Addr:              net.JoinHostPort("localhost", s.cfg.Port),
+		Addr:              net.JoinHostPort("0.0.0.0", s.cfg.Port),
 		Handler:           chain.Then(s.mux),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
