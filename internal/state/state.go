@@ -1,7 +1,9 @@
-// Package state contains the traefik configuration by environment
+// Package state manages traefik dynamic configurations per environment,
+// merging local files and agent submissions into a single master config.
 package state
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -9,6 +11,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/traefik/traefik/v3/pkg/config/dynamic"
 	"go.yaml.in/yaml/v3"
 )
@@ -19,20 +22,30 @@ type Environment struct {
 	Local  *dynamic.Configuration
 }
 
+// State holds traefik configurations grouped by environment.
 type State struct {
 	mu          sync.RWMutex
-	Envs        map[string]*Environment // Map of group names to their environments
+	Envs        map[string]*Environment
 	subscribers map[string][]chan *dynamic.Configuration
+	watchers    []*FileWatcher
+}
+
+// FileWatcher tracks a single config file for live reloads.
+type FileWatcher struct {
+	file    string
+	env     string
+	watcher *fsnotify.Watcher
 }
 
 func New() *State {
 	return &State{
 		Envs:        make(map[string]*Environment),
 		subscribers: make(map[string][]chan *dynamic.Configuration),
+		watchers:    make([]*FileWatcher, 0),
 	}
 }
 
-// getEnv safely retrieves an environment or creates it if it doesn't exist.
+// getEnv retrieves or creates an environment entry.
 func (s *State) getEnv(env string) *Environment {
 	// Default to a common pool if no group is specified
 	if env == "" {
@@ -51,7 +64,7 @@ func (s *State) getEnv(env string) *Environment {
 	return newEnv
 }
 
-// GetEnvNames returns a list of all environment names.
+// GetEnvNames returns all registered environment names.
 func (s *State) GetEnvNames() []string {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -63,7 +76,7 @@ func (s *State) GetEnvNames() []string {
 	return names
 }
 
-// GetMaster safely returns a snapshot of the master configuration for the given environment.
+// GetMaster returns the merged configuration for the given environment.
 func (s *State) GetMaster(env string) *dynamic.Configuration {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -77,7 +90,7 @@ func (s *State) GetMaster(env string) *dynamic.Configuration {
 	return &dynamic.Configuration{}
 }
 
-// UpdateAgent completely replaces the state for a specific agent and rebuilds the Master.
+// UpdateAgent replaces an agent's config and rebuilds the merged master.
 func (s *State) UpdateAgent(env, name string, data []byte) {
 	cfg := &dynamic.Configuration{}
 	if err := json.Unmarshal(data, cfg); err != nil {
@@ -93,46 +106,108 @@ func (s *State) UpdateAgent(env, name string, data []byte) {
 	s.rebuildMaster(env)
 }
 
-// LoadLocalFile reads a JSON or YAML dynamic config and stores it
-func (s *State) LoadLocalFile(env, path string) error {
-	if path == "" {
-		return nil
-	}
-	if _, err := os.Stat(filepath.Clean(path)); os.IsNotExist(err) {
-		return nil
-	}
-
+// parseFile reads a .yaml, .yml, or .json config file.
+func parseFile(path string) (*dynamic.Configuration, error) {
 	data, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
-		return fmt.Errorf("failed to read local config: %w", err)
+		return nil, fmt.Errorf("failed to read local config: %w", err)
 	}
-	slog.Info("Loading local configuration file", "path", path)
 
 	cfg := &dynamic.Configuration{}
 	ext := filepath.Ext(path)
 
 	if ext == ".yaml" || ext == ".yml" {
 		if err := yaml.Unmarshal(data, cfg); err != nil {
-			return fmt.Errorf("failed to parse yaml: %w", err)
+			return nil, fmt.Errorf("failed to parse yaml: %w", err)
 		}
 	} else {
 		if err := json.Unmarshal(data, cfg); err != nil {
-			return fmt.Errorf("failed to parse json: %w", err)
+			return nil, fmt.Errorf("failed to parse json: %w", err)
 		}
+	}
+	return cfg, nil
+}
+
+// LoadLocalFile reads a config file, stores it, and watches for live changes.
+func (s *State) LoadLocalFile(ctx context.Context, env, path string) error {
+	if path == "" {
+		return nil
+	}
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return nil
+	}
+
+	slog.Info("Loading local configuration file", "path", path)
+
+	cfg, err := parseFile(path)
+	if err != nil {
+		return err
 	}
 
 	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	envs := s.getEnv(env)
 	envs.Local = cfg
 	s.rebuildMaster(env)
+	s.mu.Unlock()
+
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		return fmt.Errorf("failed to create file watcher: %w", err)
+	}
+
+	fw := &FileWatcher{
+		file:    path,
+		env:     env,
+		watcher: watcher,
+	}
+
+	s.watchers = append(s.watchers, fw)
+
+	go func() {
+		if err := watcher.Add(path); err != nil {
+			slog.Error("Failed to watch config file", "path", path, "error", err)
+			return
+		}
+
+		defer func() { _ = watcher.Close() }()
+
+		for {
+			select {
+			case <-ctx.Done():
+				slog.Debug("Stopping config file watcher", "path", path)
+				return
+			case event, ok := <-watcher.Events:
+				if !ok {
+					return
+				}
+				if event.Has(fsnotify.Write) || event.Has(fsnotify.Create) || event.Has(fsnotify.Chmod) {
+					slog.Debug("Config file changed, reloading", "path", path)
+					cfg, err := parseFile(path)
+					if err != nil {
+						slog.Error("Failed to reload config", "path", path, "error", err)
+						continue
+					}
+
+					s.mu.Lock()
+					envs.Local = cfg
+					s.rebuildMaster(env)
+					s.mu.Unlock()
+				}
+			case err, ok := <-watcher.Errors:
+				if !ok {
+					return
+				}
+				slog.Error("Config watcher error", "path", path, "error", err)
+			}
+		}
+	}()
+
 	return nil
 }
 
-// rebuildMaster loops through all known agents and merges them into a brand new Master.
+// rebuildMaster merges local and agent configs into a fresh master, then broadcasts.
 func (s *State) rebuildMaster(env string) {
-	envs := s.Envs[env]
+	envs := s.getEnv(env)
 	newMaster := &dynamic.Configuration{}
 	if envs.Local != nil {
 		newMaster.HTTP = mergeHTTP(newMaster.HTTP, envs.Local.HTTP)
@@ -161,7 +236,7 @@ func (s *State) rebuildMaster(env string) {
 	}
 }
 
-// Subscribe creates a channel that receives updates for a specific environment.
+// Subscribe returns a channel that receives config updates for the environment.
 func (s *State) Subscribe(env string) chan *dynamic.Configuration {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -176,7 +251,7 @@ func (s *State) Subscribe(env string) chan *dynamic.Configuration {
 	return ch
 }
 
-// Unsubscribe removes a channel from the pool and closes it.
+// Unsubscribe removes and closes a subscription channel.
 func (s *State) Unsubscribe(env string, ch chan *dynamic.Configuration) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

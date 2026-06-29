@@ -1,4 +1,4 @@
-// Package config contains the application configuration
+// Package config loads CLI flags and initializes application state.
 package config
 
 import (
@@ -19,9 +19,9 @@ type Config struct {
 	State *state.State
 }
 
-// New loads configuration from environment variables
+// New parses CLI flags and loads the initial config file.
 func New(ctx context.Context, cmd *cli.Command) (*Config, error) {
-	cfg := Config{}
+	var cfg Config
 
 	cfg.State = state.New()
 	cfg.Version = cmd.Root().Version
@@ -35,7 +35,7 @@ func New(ctx context.Context, cmd *cli.Command) (*Config, error) {
 
 	local := cmd.String("config")
 	if local != "" {
-		if err := cfg.State.LoadLocalFile("default", local); err != nil {
+		if err := cfg.State.LoadLocalFile(ctx, "default", local); err != nil {
 			return nil, err
 		}
 	}

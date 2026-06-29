@@ -1,11 +1,13 @@
-// Package api contains the API server
+// Package api provides the HTTP server, middleware, and request handlers.
 package api
 
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	"net/http/pprof"
 	"time"
@@ -37,7 +39,7 @@ func (s *Server) Start(ctx context.Context) error {
 		WithSecurityHeaders,
 	)
 	server := &http.Server{
-		Addr:              ":" + s.cfg.Port,
+		Addr:              net.JoinHostPort("localhost", s.cfg.Port),
 		Handler:           chain.Then(s.mux),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
@@ -58,7 +60,8 @@ func (s *Server) Start(ctx context.Context) error {
 	select {
 	case <-ctx.Done():
 		slog.Info("Shutting down server...")
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		errShutdown := errors.New("shutdown timeout")
+		shutdownCtx, cancel := context.WithTimeoutCause(context.Background(), 3*time.Second, errShutdown)
 		defer cancel()
 		return server.Shutdown(shutdownCtx)
 
