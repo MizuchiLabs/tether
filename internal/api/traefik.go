@@ -9,6 +9,7 @@ import (
 	"go.yaml.in/yaml/v3"
 )
 
+// PublishConfig returns the merged traefik config as JSON or YAML.
 func PublishConfig(state *state.State) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		format := r.URL.Query().Get("format")

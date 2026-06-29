@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// responseWriter wraps http.ResponseWriter to capture the status code and size.
+// responseWriter captures status code and response size for logging.
 type responseWriter struct {
 	http.ResponseWriter
 	statusCode  int
@@ -37,6 +37,7 @@ func (rw *responseWriter) Unwrap() http.ResponseWriter {
 	return rw.ResponseWriter
 }
 
+// WithLogger logs request method, path, status, duration, and client IP.
 func (s *Server) WithLogger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
@@ -45,9 +46,20 @@ func (s *Server) WithLogger(next http.Handler) http.Handler {
 		next.ServeHTTP(rw, r)
 		duration := time.Since(start)
 
-		var level slog.Level
+		path := r.URL.Path
 
-		// Determine log severity based on status code
+		if strings.HasPrefix(path, "/_app/") {
+			return
+		}
+
+		if !s.cfg.Debug {
+			isSmallGet := r.Method == http.MethodGet && rw.statusCode < 400 && rw.size < 1024
+			if path == "/healthz" || (path == "/config" && rw.statusCode == http.StatusOK) || isSmallGet {
+				return
+			}
+		}
+
+		var level slog.Level
 		switch {
 		case rw.statusCode >= 500:
 			level = slog.LevelError
@@ -58,31 +70,11 @@ func (s *Server) WithLogger(next http.Handler) http.Handler {
 			if s.cfg.Debug {
 				level = slog.LevelDebug
 			}
-			path := r.URL.Path
-			if strings.HasPrefix(path, "/_app/") {
-				return
-			}
-
-			// Filter out noisy successful requests (2xx/3xx) when not debugging
-			if !s.cfg.Debug {
-				if path == "/healthz" {
-					return
-				}
-				if path == "/config" && rw.statusCode == http.StatusOK {
-					return
-				}
-
-				// Skip static file spam
-				isAPI := strings.HasPrefix(path, "/api/")
-				if r.Method == http.MethodGet && !isAPI && rw.statusCode < 400 && rw.size < 1024 {
-					return
-				}
-			}
 		}
 
 		attrs := []slog.Attr{
 			slog.String("method", r.Method),
-			slog.String("path", r.URL.Path),
+			slog.String("path", path),
 			slog.Int("status", rw.statusCode),
 			slog.Duration("duration", duration),
 			slog.String("ip", r.RemoteAddr),

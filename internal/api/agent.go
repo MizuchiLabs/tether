@@ -16,6 +16,7 @@ type UpdateRequest struct {
 	Config json.RawMessage `json:"config"`
 }
 
+// AgentWS accepts WebSocket connections from agents pushing config updates.
 func AgentWS(state *state.State) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		c, err := websocket.Accept(w, r, nil)
@@ -28,10 +29,10 @@ func AgentWS(state *state.State) http.HandlerFunc {
 			var req UpdateRequest
 			if err := wsjson.Read(r.Context(), c, &req); err != nil {
 				slog.Info("Agent disconnected", "error", err)
-				return // Drop connection on read error or close
+				return
 			}
 
-			if req.Name == "" {
+			if req.Name == "" || len(req.Config) == 0 {
 				continue
 			}
 

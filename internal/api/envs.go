@@ -7,6 +7,7 @@ import (
 	"github.com/mizuchilabs/tether/internal/state"
 )
 
+// PublishEnvs returns a list of registered environment names.
 func PublishEnvs(state *state.State) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		envs := state.GetEnvNames()

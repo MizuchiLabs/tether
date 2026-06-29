@@ -12,10 +12,11 @@ type LoginRequest struct {
 	Secret string `json:"secret"`
 }
 
+// WithAuth checks the request token before calling the next handler.
 func (s *Server) WithAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if s.cfg.Token == "" {
-			next.ServeHTTP(w, r) // Authentication disabled
+			next.ServeHTTP(w, r)
 			return
 		}
 
@@ -29,6 +30,7 @@ func (s *Server) WithAuth(next http.Handler) http.Handler {
 	})
 }
 
+// Login validates the secret and sets an access cookie.
 func Login(token string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -42,13 +44,11 @@ func Login(token string) http.HandlerFunc {
 			return
 		}
 
-		// Verify the secret against your config
 		if token != "" && subtle.ConstantTimeCompare([]byte(req.Secret), []byte(token)) != 1 {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
 
-		// Set the secure, HttpOnly cookie
 		http.SetCookie(w, &http.Cookie{
 			Name:     util.AccessTokenName,
 			Value:    req.Secret,
@@ -62,6 +62,7 @@ func Login(token string) http.HandlerFunc {
 	}
 }
 
+// Logout clears the access cookie.
 func Logout() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		http.SetCookie(w, &http.Cookie{

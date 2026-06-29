@@ -1,4 +1,4 @@
-// Package web embeds the web assets
+// Package web provides the embedded frontend build files.
 package web
 
 import (

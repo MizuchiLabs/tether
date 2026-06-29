@@ -10,6 +10,7 @@ import (
 	"github.com/mizuchilabs/tether/internal/state"
 )
 
+// EventStream returns an SSE endpoint that pushes config updates to clients.
 func EventStream(ctx context.Context, state *state.State) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/event-stream")
@@ -18,7 +19,6 @@ func EventStream(ctx context.Context, state *state.State) http.HandlerFunc {
 
 		rc := http.NewResponseController(w)
 
-		// Clear the global write deadline for this long-lived connection
 		if err := rc.SetWriteDeadline(time.Time{}); err != nil {
 			http.Error(w, "Failed to configure SSE connection", http.StatusInternalServerError)
 			return
@@ -38,7 +38,7 @@ func EventStream(ctx context.Context, state *state.State) http.HandlerFunc {
 				return
 			case <-ctx.Done():
 				return
-			case <-ping.C: // Send a keep-alive ping
+			case <-ping.C:
 				_, _ = fmt.Fprintf(w, ": ping\n\n")
 				_ = rc.Flush()
 			case newConfig := <-updateCh:
@@ -46,7 +46,6 @@ func EventStream(ctx context.Context, state *state.State) http.HandlerFunc {
 				_, _ = fmt.Fprintf(w, "data: %s\n\n", data)
 
 				if err := rc.Flush(); err != nil {
-					// Client disconnected or connection dropped
 					return
 				}
 			}

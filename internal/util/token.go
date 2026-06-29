@@ -1,4 +1,4 @@
-// Package util contains utility functions
+// Package util provides helper functions for token extraction.
 package util
 
 import (
@@ -8,6 +8,7 @@ import (
 
 const AccessTokenName = "tether_access"
 
+// GetAccessToken returns the token from Authorization header or cookie.
 func GetAccessToken(header http.Header) string {
 	if token := getBearer(header); token != "" {
 		return token

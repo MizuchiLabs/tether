@@ -19,7 +19,7 @@ const (
 	MaxBodySize = 1 << 20
 )
 
-// WithBodyLimit restricts the size of incoming request bodies.
+// WithBodyLimit rejects requests larger than MaxBodySize.
 func WithBodyLimit(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.ContentLength > MaxBodySize {
@@ -31,20 +31,19 @@ func WithBodyLimit(next http.Handler) http.Handler {
 	})
 }
 
-// WithSecurityHeaders adds basic secure HTTP headers.
+// WithSecurityHeaders sets common security response headers.
 func WithSecurityHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("X-Frame-Options", "DENY")
 		w.Header().Set("Cross-Origin-Opener-Policy", "same-origin")
-		w.Header().
-			Set("Content-Security-Policy", "default-src 'self' 'unsafe-inline' 'unsafe-eval' data:")
+		w.Header().Set("Content-Security-Policy", "default-src 'self' 'unsafe-inline' 'unsafe-eval' data:")
 		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
 		next.ServeHTTP(w, r)
 	})
 }
 
-// WithRateLimit creates a simple IP-based rate limiter middleware.
+// WithRateLimit enforces per-IP request limits, cleaning stale entries every minute.
 func WithRateLimit(next http.Handler) http.Handler {
 	type client struct {
 		limiter  *rate.Limiter
@@ -75,10 +74,12 @@ func WithRateLimit(next http.Handler) http.Handler {
 		if err != nil {
 			ip = r.RemoteAddr
 		}
-		// Handle proxies
 		if fwd := r.Header.Get("X-Forwarded-For"); fwd != "" {
-			ips := strings.Split(fwd, ",")
-			ip = strings.TrimSpace(ips[0])
+			if first, _, ok := strings.Cut(fwd, ","); ok {
+				ip = strings.TrimSpace(first)
+			} else {
+				ip = strings.TrimSpace(fwd)
+			}
 		}
 
 		mu.Lock()
