@@ -5,7 +5,7 @@ go 1.26.4
 require (
 	github.com/coder/websocket v1.8.15
 	github.com/fsnotify/fsnotify v1.10.1
-	github.com/traefik/traefik/v3 v3.7.5
+	github.com/traefik/traefik/v3 v3.7.6
 	github.com/urfave/cli/v3 v3.10.1
 	github.com/vearutop/statigz v1.5.0
 	go.yaml.in/yaml/v3 v3.0.4
@@ -21,7 +21,7 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/emicklei/go-restful/v3 v3.13.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.2 // indirect
-	github.com/go-acme/lego/v4 v4.35.2 // indirect
+	github.com/go-acme/lego/v5 v5.2.2 // indirect
 	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
 	github.com/go-kit/log v0.2.1 // indirect
 	github.com/go-logfmt/logfmt v0.6.1 // indirect
@@ -101,6 +101,7 @@ require (
 	sigs.k8s.io/randfill v1.0.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v6 v6.4.0 // indirect
 	sigs.k8s.io/yaml v1.6.0 // indirect
+	software.sslmate.com/src/go-pkcs12 v0.7.1 // indirect
 )
 
 // Workaround for https://github.com/traefik/traefik/issues/13115
