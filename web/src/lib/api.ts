@@ -1,13 +1,13 @@
 import { loggedIn } from '$lib/store.svelte';
 
 export async function client<T>(endpoint: string, options?: RequestInit): Promise<T> {
+	const headers = new Headers(options?.headers);
+	headers.set('Content-Type', 'application/json');
+
 	const response = await fetch(`${endpoint}`, {
 		...options,
 		credentials: 'include',
-		headers: {
-			'Content-Type': 'application/json',
-			...options?.headers
-		}
+		headers
 	});
 
 	if (!response.ok) {
