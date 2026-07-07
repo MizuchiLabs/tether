@@ -212,7 +212,7 @@
 		{#if config && Object.keys(config).length > 0}
 			<InputGroup.Root>
 				<InputGroup.Input bind:value={search} placeholder="Search..." />
-				<InputGroup.Addon align="inline-end">
+				<InputGroup.Addon align="inline-end" class="pr-4">
 					{#if search}
 						<InputGroup.Button variant="ghost" size="icon-xs" onclick={() => (search = '')}>
 							<DeleteIcon data-icon="inline-start" />
