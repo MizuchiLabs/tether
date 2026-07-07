@@ -3,19 +3,17 @@
 	import Logo from '$lib/assets/logo.svelte';
 	import Login from '$lib/components/Login.svelte';
 	import { Button } from '$lib/components/ui/button';
+	import { Toaster } from '$lib/components/ui/sonner';
 	import { loggedIn } from '$lib/store.svelte';
 	import { LogOut, Moon, Sun } from '@lucide/svelte';
 	import { ModeWatcher, toggleMode } from 'mode-watcher';
 	import './layout.css';
 
 	const { children } = $props();
-
-	$effect(() => {
-		api.envs();
-	});
 </script>
 
 <ModeWatcher />
+<Toaster richColors />
 <Login />
 
 {#if loggedIn.current}

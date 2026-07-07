@@ -56,11 +56,13 @@
 					<Select.Trigger class="w-40">
 						{env || 'Select...'}
 					</Select.Trigger>
-					<Select.Content>
+			<Select.Content>
+					<Select.Group>
 						{#each envs as item (item)}
 							<Select.Item value={item}>{item}</Select.Item>
 						{/each}
-					</Select.Content>
+					</Select.Group>
+				</Select.Content>
 				</Select.Root>
 			</div>
 		{/if}

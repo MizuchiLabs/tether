@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button';
+	import * as Field from '$lib/components/ui/field';
 	import * as InputGroup from '$lib/components/ui/input-group';
-	import { Label } from '$lib/components/ui/label';
-	import { Eye, EyeOff, RefreshCw } from '@lucide/svelte';
+	import { Spinner } from '$lib/components/ui/spinner';
+	import { Eye, EyeOff } from '@lucide/svelte';
 	import { api } from '$lib/api';
 	import Logo from '$lib/assets/logo.svelte';
 	import { loggedIn } from '$lib/store.svelte';
@@ -29,7 +30,7 @@
 </script>
 
 {#if !loggedIn.current}
-	<section class="flex min-h-screen px-4 py-16 md:py-32 dark:bg-transparent">
+	<section class="flex min-h-screen px-4 py-16 md:py-32">
 		<form
 			onsubmit={handleLogin}
 			class="m-auto h-fit w-full max-w-sm overflow-hidden rounded-[calc(var(--radius)+.125rem)] border bg-muted shadow-md shadow-zinc-950/5 dark:[--color-muted:var(--color-zinc-900)]"
@@ -43,41 +44,46 @@
 					<p class="text-sm">Enter your shared secret token to view agent configurations.</p>
 				</div>
 
-				<div class="mt-6 flex flex-col gap-4">
-					<div class="flex flex-col gap-2">
-						<Label for="pwd" class="text-title text-sm">Access Token</Label>
+				<Field.FieldGroup class="mt-6">
+					<Field.Field data-invalid={!!error || undefined}>
+						<Field.FieldLabel for="pwd">Access Token</Field.FieldLabel>
 						<InputGroup.Root>
-							<InputGroup.Input type={showPassword ? 'text' : 'password'} bind:value={secret} />
+							<InputGroup.Input
+								id="pwd"
+								type={showPassword ? 'text' : 'password'}
+								bind:value={secret}
+								aria-invalid={!!error || undefined}
+							/>
 							<InputGroup.Addon align="inline-end">
 								<Button
-									aria-label="Show password"
-									title="Show password"
+									aria-label={showPassword ? 'Hide password' : 'Show password'}
+									title={showPassword ? 'Hide password' : 'Show password'}
 									variant="ghost"
 									size="icon-sm"
 									onclick={() => (showPassword = !showPassword)}
 								>
 									{#if showPassword}
-										<Eye data-icon="inline-start" />
-									{:else}
 										<EyeOff data-icon="inline-start" />
+									{:else}
+										<Eye data-icon="inline-start" />
 									{/if}
 								</Button>
 							</InputGroup.Addon>
 						</InputGroup.Root>
 						{#if error}
-							<p class="text-sm text-destructive">{error}</p>
+							<Field.FieldDescription class="text-destructive">{error}</Field.FieldDescription>
 						{/if}
-					</div>
+					</Field.Field>
 
 					<Button type="submit" disabled={isLoading} class="w-full">
 						{#if isLoading}
-							<RefreshCw class="animate-spin" data-icon="inline-start" />
+							<Spinner data-icon="inline-start" />
 							Verifying...
 						{:else}
 							Sign In
 						{/if}
 					</Button>
-				</div>
+				</Field.FieldGroup>
 			</div>
 		</form>
 	</section>

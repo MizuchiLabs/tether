@@ -4,9 +4,11 @@
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import * as Empty from '$lib/components/ui/empty';
 	import * as InputGroup from '$lib/components/ui/input-group';
+	import * as ScrollArea from '$lib/components/ui/scroll-area';
+	import { Spinner } from '$lib/components/ui/spinner';
+	import * as Tabs from '$lib/components/ui/tabs';
 	import { UseClipboard } from '$lib/hooks/use-clipboard.svelte';
 	import { lang } from '$lib/store.svelte';
-	import { cn } from '$lib/utils';
 	import {
 		Bug,
 		CheckIcon,
@@ -271,7 +273,7 @@
 	<Empty.Root class="border border-dashed">
 		<Empty.Header>
 			<Empty.Media variant="icon">
-				<RefreshCw class="animate-spin" />
+				<Spinner />
 			</Empty.Media>
 			<Empty.Title>Loading configuration...</Empty.Title>
 			<Empty.Description>Fetching configuration from Tether.</Empty.Description>
@@ -306,14 +308,11 @@
 		</Empty.Header>
 	</Empty.Root>
 {:else if formatted && codeHtml}
-	<InputGroup.Root
-		class="group relative flex-1 overflow-hidden rounded-xl border bg-card shadow-sm"
+	<div
+		class="group relative flex flex-1 flex-col overflow-hidden rounded-xl border bg-card shadow-sm"
 	>
-		<InputGroup.Addon
-			align="block-start"
-			class="flex h-10 items-center justify-between border-b border-muted"
-		>
-			<div class="flex w-24 items-center gap-1.5">
+		<div class="flex h-10 items-center justify-between border-b border-muted px-4">
+			<div class="flex items-center gap-1.5">
 				<div
 					class="size-3 rounded-full border border-black/10 bg-red-500/80 dark:border-white/10"
 				></div>
@@ -325,25 +324,19 @@
 				></div>
 			</div>
 
-			<div class="flex items-center rounded-full bg-muted p-0.5">
-				{#each ['yaml', 'json', 'toml'] as language (language)}
-					<button
-						class={cn(
-							'rounded-full px-3 py-1 font-mono text-xs transition-all',
-							lang.current === language
-								? 'bg-card text-foreground'
-								: 'text-muted-foreground hover:text-foreground'
-						)}
-						onclick={() => (lang.current = language)}
-					>
-						{env}.{language}
-					</button>
-				{/each}
-			</div>
-			<div class="flex w-24 items-center justify-end gap-1 text-muted-foreground">
-				<InputGroup.Button
+			<Tabs.Root value={lang.current} onValueChange={(v) => (lang.current = v)}>
+				<Tabs.List>
+					{#each ['yaml', 'json', 'toml'] as language (language)}
+						<Tabs.Trigger value={language} class="font-mono text-xs">{env}.{language}</Tabs.Trigger>
+					{/each}
+				</Tabs.List>
+			</Tabs.Root>
+
+			<div class="flex items-center gap-1 text-muted-foreground">
+				<Button
 					aria-label="Copy"
 					title="Copy"
+					variant="ghost"
 					size="icon-xs"
 					onclick={() => clipboard.copy(formatted)}
 				>
@@ -352,23 +345,25 @@
 					{:else}
 						<CopyIcon data-icon="inline-start" />
 					{/if}
-				</InputGroup.Button>
-				<InputGroup.Button
+				</Button>
+				<Button
 					aria-label="Download"
 					title="Download"
+					variant="ghost"
 					size="icon-xs"
 					onclick={handleDownload}
 				>
 					<DownloadIcon data-icon="inline-start" />
-				</InputGroup.Button>
+				</Button>
 			</div>
-		</InputGroup.Addon>
-		<InputGroup.Text
-			class="shiki-container h-full w-full items-start justify-start overflow-auto px-4 py-2 text-left text-sm leading-relaxed"
-		>
-			{@html codeHtml}
-		</InputGroup.Text>
-	</InputGroup.Root>
+		</div>
+
+		<ScrollArea.Root class="h-full w-full">
+			<div class="shiki-container px-4 py-2 text-left text-sm leading-relaxed">
+				{@html codeHtml}
+			</div>
+		</ScrollArea.Root>
+	</div>
 {/if}
 
 <style>
