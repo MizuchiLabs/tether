@@ -68,7 +68,7 @@ importers:
         version: 0.24.0
       shadcn-svelte:
         specifier: ^1.3.0
-        version: 1.4.0(svelte@5.56.4)
+        version: 1.4.1(svelte@5.56.4)
       shiki:
         specifier: ^4.3.0
         version: 4.3.1
@@ -1184,6 +1184,11 @@ packages:
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
+  nanoid@3.3.16:
+    resolution: {integrity: sha512-bzlKTyNJ7+LdGIIwy8ijFpIqEQIvafahV7eYykJ8Cvh42EdJeODoJ6gUJXpQJvej1BddH8OqTXZNE/KfbWAu8Q==}
+    engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
+    hasBin: true
+
   node-fetch-native@1.6.7:
     resolution: {integrity: sha512-g9yhqoedzIUm0nTnTqAQvueMPVOuIY16bqgAJJC8XOOubYFNwz6IER9qs0Gq2Xd0+CecCKFjtdDTMA4u4xG06Q==}
 
@@ -1240,6 +1245,10 @@ packages:
 
   postcss@8.5.16:
     resolution: {integrity: sha512-vuwillviilfKZsg0VGj5R/YwwcHx4SLsIOI/7K6mQkWx+l5cUHTjj5g0AasTBcyXsbfTgrwsUNmVUb5xVwyPwg==}
+    engines: {node: ^10 || ^12 || >=14}
+
+  postcss@8.5.19:
+    resolution: {integrity: sha512-Mz8SaolMd8nB+G13WkORcxQKHZ/NE4xXevtkJHVuG+guo9/wYKlIMTKAqGdEmYOXR2ijPjTYNHssizdaVSUNdQ==}
     engines: {node: ^10 || ^12 || >=14}
 
   property-information@7.2.0:
@@ -1306,8 +1315,8 @@ packages:
   set-cookie-parser@3.1.2:
     resolution: {integrity: sha512-5/r/lTwbJ3zQ+qwdUFZYeRNqda7P5HD8zQKqlSjdGt1/S0cjLAphHusj4Y58ahDtWn/g32xrIS58/ikOvwl0Lw==}
 
-  shadcn-svelte@1.4.0:
-    resolution: {integrity: sha512-7yEi4wurfKhfMuTCpTTdJrpQAePgfbwejij6jZplU1ydJrxGd+bEco+yTe+atUzaEosKUbQwz6RT5As+e3lE+Q==}
+  shadcn-svelte@1.4.1:
+    resolution: {integrity: sha512-lpvnuHJOMf/CRlOMo5h7HpmdpcWmqVoPyvnCcgpJWJWzVkiwmisF80mR54GIAExSTSk1g4+ere3QrSty2PCIIg==}
     hasBin: true
     peerDependencies:
       svelte: ^5.0.0
@@ -2270,6 +2279,8 @@ snapshots:
 
   nanoid@3.3.15: {}
 
+  nanoid@3.3.16: {}
+
   node-fetch-native@1.6.7: {}
 
   obug@2.1.3: {}
@@ -2354,6 +2365,12 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
+  postcss@8.5.19:
+    dependencies:
+      nanoid: 3.3.16
+      picocolors: 1.1.1
+      source-map-js: 1.2.1
+
   property-information@7.2.0: {}
 
   readdirp@4.1.2: {}
@@ -2428,11 +2445,11 @@ snapshots:
 
   set-cookie-parser@3.1.2: {}
 
-  shadcn-svelte@1.4.0(svelte@5.56.4):
+  shadcn-svelte@1.4.1(svelte@5.56.4):
     dependencies:
       commander: 14.0.3
       node-fetch-native: 1.6.7
-      postcss: 8.5.16
+      postcss: 8.5.19
       svelte: 5.56.4
       tailwind-merge: 3.6.0
 
