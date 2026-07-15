@@ -5,7 +5,7 @@ go 1.26.4
 require (
 	github.com/coder/websocket v1.8.15
 	github.com/fsnotify/fsnotify v1.10.1
-	github.com/traefik/traefik/v3 v3.7.7
+	github.com/traefik/traefik/v3 v3.7.8
 	github.com/urfave/cli/v3 v3.10.1
 	github.com/vearutop/statigz v1.5.0
 	go.yaml.in/yaml/v3 v3.0.4
