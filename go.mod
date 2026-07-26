@@ -8,7 +8,7 @@ require (
 	github.com/traefik/traefik/v3 v3.7.9
 	github.com/urfave/cli/v3 v3.10.1
 	github.com/vearutop/statigz v1.5.0
-	go.yaml.in/yaml/v3 v3.0.4
+	go.yaml.in/yaml/v3 v3.0.5
 	golang.org/x/time v0.15.0
 )
 
