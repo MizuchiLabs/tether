@@ -53,7 +53,7 @@ importers:
         version: 2.1.1
       js-toml:
         specifier: ^1.1.2
-        version: 1.2.1
+        version: 1.2.2
       mode-watcher:
         specifier: ^1.1.0
         version: 1.1.0(svelte@5.56.8)
@@ -980,8 +980,8 @@ packages:
     resolution: {integrity: sha512-U71cyTamuh1CRNCfpGY6to28lxvNwPG4Guz/EVjgf3Jmzv0vlDp1atT9eS5dDjMYHucpHbWns6Lwf3BKz6svdw==}
     engines: {node: '>= 0.6'}
 
-  core-js-pure@3.49.0:
-    resolution: {integrity: sha512-XM4RFka59xATyJv/cS3O3Kml72hQXUeGRuuTmMYFxwzc9/7C8OYTaIR/Ji+Yt8DXzsFLNhat15cE/JP15HrCgw==}
+  core-js-pure@3.50.0:
+    resolution: {integrity: sha512-6GP3Pxz4IKyWjAfa747vIu/jilB5z29JWROLqH/b+pXVcpgh6tM06ZIBwSuglgVqzDYURhOK6oEzTrG0bCHitA==}
 
   cssesc@3.0.0:
     resolution: {integrity: sha512-/Tb/JcjK111nNScGob5MNtsntNM1aCNUDipB/TkwZFhyDrrE47SOx/18wF2bbjgc3ZzCSKW1T5nt5EbFoAz/Vg==}
@@ -1060,8 +1060,8 @@ packages:
     resolution: {integrity: sha512-AC/7JofJvZGrrneWNaEnJeOLUx+JlGt7tNa0wZiRPT4MY1wmfKjt2+6O2p2uz2+skll8OZZmJMNqeke7kKbNgQ==}
     hasBin: true
 
-  js-toml@1.2.1:
-    resolution: {integrity: sha512-alpDea3b3mKroupsayNq96hMkqQg1gdRTq55TPRLI+cqwhBbm6/0y8plFCZyZrAJhFZDgWwu56JB/HiYP/QRlg==}
+  js-toml@1.2.2:
+    resolution: {integrity: sha512-NapVhoCRGcW7P5gZJLjRTgabe9EOa+RVSIiyZfElKNiyAayP4kzOd0mvSzkbSt8uJ3psLkU03DuJLDVjYO6ueQ==}
 
   kleur@4.1.5:
     resolution: {integrity: sha512-o+NO+8WrRiQEE4/7nwRJhN1HWpVmJm511pBHUxPLtp0BUISzlBplORYSmTclCnJvQq2tKu/sgl3xVpkc7ZWuQQ==}
@@ -1586,7 +1586,7 @@ snapshots:
 
   '@babel/runtime-corejs3@7.29.7':
     dependencies:
-      core-js-pure: 3.49.0
+      core-js-pure: 3.50.0
 
   '@chevrotain/cst-dts-gen@12.0.0':
     dependencies:
@@ -2182,7 +2182,7 @@ snapshots:
 
   cookie@0.6.0: {}
 
-  core-js-pure@3.49.0: {}
+  core-js-pure@3.50.0: {}
 
   cssesc@3.0.0: {}
 
@@ -2248,7 +2248,7 @@ snapshots:
 
   jiti@2.7.0: {}
 
-  js-toml@1.2.1:
+  js-toml@1.2.2:
     dependencies:
       chevrotain: 12.0.0
       xregexp: 5.1.2
