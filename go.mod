@@ -6,7 +6,7 @@ require (
 	github.com/coder/websocket v1.8.15
 	github.com/fsnotify/fsnotify v1.10.1
 	github.com/traefik/traefik/v3 v3.7.10
-	github.com/urfave/cli/v3 v3.10.1
+	github.com/urfave/cli/v3 v3.11.0
 	github.com/vearutop/statigz v1.5.0
 	go.yaml.in/yaml/v3 v3.0.5
 	golang.org/x/time v0.15.0
