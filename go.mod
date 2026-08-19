@@ -5,7 +5,7 @@ go 1.26.6
 require (
 	github.com/coder/websocket v1.8.15
 	github.com/fsnotify/fsnotify v1.10.1
-	github.com/traefik/traefik/v3 v3.7.10
+	github.com/traefik/traefik/v3 v3.7.11
 	github.com/urfave/cli/v3 v3.11.0
 	github.com/vearutop/statigz v1.5.0
 	go.yaml.in/yaml/v3 v3.0.5
@@ -42,7 +42,7 @@ require (
 	github.com/go-openapi/swag/typeutils v0.28.0 // indirect
 	github.com/go-openapi/swag/yamlutils v0.28.0 // indirect
 	github.com/google/gnostic-models v0.7.1 // indirect
-	github.com/google/go-github/v28 v28.1.1 // indirect
+	github.com/google/go-github/v90 v90.0.0 // indirect
 	github.com/google/go-querystring v1.2.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
