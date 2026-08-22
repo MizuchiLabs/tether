@@ -34,7 +34,8 @@ upx:
     goos: [linux]
 
 kos:
-  - base_image: alpine
+  - main: .
+    base_image: alpine
     repositories: [ghcr.io/mizuchilabs/tether]
     bare: true
     preserve_import_paths: false
