@@ -5,7 +5,7 @@ go 1.26.6
 require (
 	github.com/coder/websocket v1.8.15
 	github.com/fsnotify/fsnotify v1.10.1
-	github.com/traefik/traefik/v3 v3.7.11
+	github.com/traefik/traefik/v3 v3.7.12
 	github.com/urfave/cli/v3 v3.11.0
 	github.com/vearutop/statigz v1.5.0
 	go.yaml.in/yaml/v3 v3.0.5
@@ -13,7 +13,6 @@ require (
 )
 
 require (
-	github.com/andybalholm/brotli v1.2.1 // indirect
 	github.com/aws/smithy-go v1.27.7 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
