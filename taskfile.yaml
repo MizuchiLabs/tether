@@ -1,7 +1,6 @@
 version: "3"
 
 env:
-  CGO_ENABLED: 0
   IMAGE: ghcr.io/mizuchilabs/tether
 
 tasks:
@@ -42,8 +41,8 @@ tasks:
       - go fmt ./...
       - go vet ./...
       - govulncheck ./...
-      - go test -cover ./...
-      - golangci-lint run
+      - go test -race -count=1 -cover ./...
+      - golangci-lint run --fix
 
   snapshot:
     desc: Build snapshot
