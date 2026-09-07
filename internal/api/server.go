@@ -12,9 +12,10 @@ import (
 	"net/http/pprof"
 	"time"
 
+	"github.com/vearutop/statigz"
+
 	"github.com/mizuchilabs/tether/internal/config"
 	"github.com/mizuchilabs/tether/web"
-	"github.com/vearutop/statigz"
 )
 
 type Server struct {
@@ -80,7 +81,7 @@ func (s *Server) registerServices(ctx context.Context) {
 	s.mux.Handle("GET /api/envs", protec.ThenFunc(PublishEnvs(s.cfg.State)))
 	s.mux.Handle("GET /config", protec.ThenFunc(PublishConfig(s.cfg.State)))
 
-	s.mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+	s.mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 

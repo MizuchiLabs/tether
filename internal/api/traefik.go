@@ -5,8 +5,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/mizuchilabs/tether/internal/state"
 	"go.yaml.in/yaml/v3"
+
+	"github.com/mizuchilabs/tether/internal/state"
 )
 
 // PublishConfig returns the merged traefik config as JSON or YAML.

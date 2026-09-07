@@ -1,4 +1,3 @@
-// Package state contains the traefik configuration by environment
 package state
 
 import (

@@ -9,7 +9,7 @@ import (
 
 // PublishEnvs returns a list of registered environment names.
 func PublishEnvs(state *state.State) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, _ *http.Request) {
 		envs := state.GetEnvNames()
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(envs)

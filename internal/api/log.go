@@ -10,6 +10,7 @@ import (
 // responseWriter captures status code and response size for logging.
 type responseWriter struct {
 	http.ResponseWriter
+
 	statusCode  int
 	size        int
 	wroteHeader bool

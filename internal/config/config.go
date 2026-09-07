@@ -5,8 +5,9 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/mizuchilabs/tether/internal/state"
 	"github.com/urfave/cli/v3"
+
+	"github.com/mizuchilabs/tether/internal/state"
 )
 
 type Config struct {

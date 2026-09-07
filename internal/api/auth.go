@@ -64,7 +64,7 @@ func Login(token string) http.HandlerFunc {
 
 // Logout clears the access cookie.
 func Logout() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, _ *http.Request) {
 		http.SetCookie(w, &http.Cookie{
 			Name:     util.AccessTokenName,
 			Value:    "",

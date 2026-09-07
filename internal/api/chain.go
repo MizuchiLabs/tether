@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-// Constructor wraps middleware that transforms an http.Handler.
+// Constructor wraps middleware that transforms an [http.Handler].
 type Constructor func(http.Handler) http.Handler
 
 // Chain composes middleware constructors into a pipeline.
