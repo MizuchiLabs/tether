@@ -18,9 +18,9 @@ builds:
     mod_timestamp: "{{ .CommitTimestamp }}"
     ldflags:
       - -s -w
-      - -X main.Version={{ .Version }}
-      - -X main.Commit={{ .Commit }}
-      - -X main.Date={{ .CommitDate }}
+      - -X github.com/mizuchilabs/kata/buildinfo.Version={{ .Version }}
+      - -X github.com/mizuchilabs/kata/buildinfo.Commit={{ .Commit }}
+      - -X github.com/mizuchilabs/kata/buildinfo.Date={{ .CommitDate }}
     goos:
       - linux
     goarch:

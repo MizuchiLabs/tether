@@ -11,11 +11,10 @@ import (
 )
 
 type Config struct {
-	Port    string
-	Token   string
-	Version string
-	Debug   bool
-	NoWeb   bool
+	Port  string
+	Token string
+	Debug bool
+	NoWeb bool
 
 	State *state.State
 }
@@ -25,7 +24,6 @@ func New(ctx context.Context, cmd *cli.Command) (*Config, error) {
 	var cfg Config
 
 	cfg.State = state.New()
-	cfg.Version = cmd.Root().Version
 	cfg.Debug = cmd.Bool("debug")
 	cfg.NoWeb = cmd.Bool("no-web")
 	cfg.Port = cmd.String("port")

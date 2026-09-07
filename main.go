@@ -14,12 +14,6 @@ import (
 	"github.com/mizuchilabs/tether/internal/config"
 )
 
-var (
-	Version = "dev"
-	Commit  = "none"
-	Date    = "unknown"
-)
-
 func main() {
 	cmd := &cli.Command{
 		EnableShellCompletion: true,
