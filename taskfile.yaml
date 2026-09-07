@@ -25,6 +25,7 @@ tasks:
     desc: Update dependencies
     cmds:
       - go get -u ./...
+      - go run ./tools/depalign
       - cd web && pnpm update --latest
 
   build:
