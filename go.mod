@@ -5,7 +5,7 @@ go 1.27.0
 require (
 	github.com/coder/websocket v1.8.15
 	github.com/fsnotify/fsnotify v1.10.1
-	github.com/mizuchilabs/kata v0.1.3
+	github.com/mizuchilabs/kata v0.1.5
 	github.com/traefik/traefik/v3 v3.7.13
 	github.com/urfave/cli/v3 v3.12.0
 	github.com/vearutop/statigz v1.5.0
@@ -80,8 +80,8 @@ require (
 	golang.org/x/crypto v0.56.0 // indirect
 	golang.org/x/net v0.58.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
-	golang.org/x/sys v0.47.0 // indirect
-	golang.org/x/term v0.45.0 // indirect
+	golang.org/x/sys v0.48.0 // indirect
+	golang.org/x/term v0.46.0 // indirect
 	golang.org/x/text v0.41.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260715232425-e75dac1f907d // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260819154853-08b0e4226688 // indirect
