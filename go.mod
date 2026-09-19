@@ -5,7 +5,7 @@ go 1.27.0
 require (
 	github.com/coder/websocket v1.8.15
 	github.com/fsnotify/fsnotify v1.10.1
-	github.com/mizuchilabs/kata v0.1.5
+	github.com/mizuchilabs/kata v0.1.10
 	github.com/traefik/traefik/v3 v3.7.13
 	github.com/urfave/cli/v3 v3.12.0
 	github.com/vearutop/statigz v1.5.0
