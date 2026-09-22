@@ -62,7 +62,7 @@
 	}
 
 	$effect(() => {
-		if (!env) return;
+		if (!env.current) return;
 		fetchConfig();
 
 		const eventSource = api.events(env.current);
