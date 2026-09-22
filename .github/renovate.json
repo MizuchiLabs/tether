@@ -11,7 +11,11 @@
   "timezone": "Europe/Vienna",
   "packageRules": [
     {
-      "matchPackagePatterns": ["*"],
+      "matchPackageNames": ["*"],
+      "automerge": true
+    },
+    {
+      "matchUpdateTypes": ["lockFileMaintenance"],
       "automerge": true
     }
   ],
