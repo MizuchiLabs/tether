@@ -5,15 +5,20 @@ go 1.27.0
 require (
 	github.com/coder/websocket v1.8.15
 	github.com/fsnotify/fsnotify v1.10.1
-	github.com/mizuchilabs/kata v0.1.3
+	github.com/go-chi/chi/v5 v5.3.2
+	github.com/go-chi/httplog/v3 v3.5.0
+	github.com/go-chi/httprate v0.16.0
+	github.com/mizuchilabs/kata v0.1.12
+	github.com/rs/cors v1.11.1
 	github.com/traefik/traefik/v3 v3.7.13
+	github.com/unrolled/secure v1.17.0
 	github.com/urfave/cli/v3 v3.13.0
 	github.com/vearutop/statigz v1.5.0
 	go.yaml.in/yaml/v3 v3.0.5
-	golang.org/x/time v0.16.0
 )
 
 require (
+	github.com/andybalholm/brotli v1.2.2 // indirect
 	github.com/aws/smithy-go v1.28.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
@@ -51,6 +56,7 @@ require (
 	github.com/hashicorp/go-version v1.9.0 // indirect
 	github.com/http-wasm/http-wasm-host-go v0.7.0 // indirect
 	github.com/json-iterator/go v1.1.13-0.20220915233716-71ac16282d12 // indirect
+	github.com/klauspost/cpuid/v2 v2.4.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/miekg/dns v1.1.73 // indirect
@@ -63,6 +69,7 @@ require (
 	github.com/traefik/traefik/dynamic/ext v0.0.0-00010101000000-000000000000 // indirect
 	github.com/unrolled/render v1.0.2 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
+	github.com/zeebo/xxh3 v1.1.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/otel v1.44.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc v0.20.0 // indirect
@@ -83,6 +90,7 @@ require (
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/term v0.45.0 // indirect
 	golang.org/x/text v0.41.0 // indirect
+	golang.org/x/time v0.15.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260715232425-e75dac1f907d // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260819154853-08b0e4226688 // indirect
 	google.golang.org/grpc v1.83.2 // indirect

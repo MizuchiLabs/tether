@@ -1,99 +1,75 @@
 package api
 
 import (
-	"net"
 	"net/http"
+	"os"
 	"strings"
-	"sync"
 	"time"
 
-	"golang.org/x/time/rate"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/httprate"
+	"github.com/unrolled/secure"
 )
 
-const (
-	// RPS is the general per-IP rate limit.
-	RPS   = 30
-	Burst = 50
-
-	// MaxBodySize is the request body size limit.
-	MaxBodySize = 1 << 20
-)
-
-// WithBodyLimit rejects requests larger than MaxBodySize.
-func WithBodyLimit(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.ContentLength > MaxBodySize {
-			http.Error(w, "Request body too large", http.StatusRequestEntityTooLarge)
-			return
-		}
-		r.Body = http.MaxBytesReader(w, r.Body, MaxBodySize)
-		next.ServeHTTP(w, r)
-	})
+func securityHeaders() func(http.Handler) http.Handler {
+	return secure.New(secure.Options{
+		ContentTypeNosniff: true,
+		FrameDeny:          true,
+		ReferrerPolicy:     "strict-origin-when-cross-origin",
+		ContentSecurityPolicy: strings.Join([]string{
+			"default-src 'self'",
+			"base-uri 'self'",
+			"object-src 'none'",
+			"frame-ancestors 'none'",
+			"form-action 'self'",
+			"script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'",
+			"style-src 'self' 'unsafe-inline'",
+			"img-src 'self' data: blob:",
+			"font-src 'self' data:",
+			"connect-src 'self'",
+			"worker-src 'self' blob:",
+		}, "; "),
+	}).Handler
 }
 
-// WithSecurityHeaders sets common security response headers.
-func WithSecurityHeaders(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("X-Content-Type-Options", "nosniff")
-		w.Header().Set("X-Frame-Options", "DENY")
-		w.Header().Set("Cross-Origin-Opener-Policy", "same-origin")
-		w.Header().Set("Content-Security-Policy", "default-src 'self' 'unsafe-inline' 'unsafe-eval' data:")
-		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
-		next.ServeHTTP(w, r)
-	})
+// clientIPKey extracts and canonicalizes the IP resolved by Chi.
+// httprate.CanonicalizeIP groups IPv6 by /64 to prevent SLAAC rotation bypasses.
+func clientIPKey(r *http.Request) (string, error) {
+	ip := middleware.GetClientIP(r.Context())
+	return httprate.CanonicalizeIP(ip), nil
 }
 
-// WithRateLimit enforces per-IP request limits, cleaning stale entries every minute.
-func WithRateLimit(next http.Handler) http.Handler {
-	type client struct {
-		limiter  *rate.Limiter
-		lastSeen time.Time
+// rateLimitAPI limits /api requests per client IP.
+func rateLimitAPI(n int, window time.Duration) func(http.Handler) http.Handler {
+	clientIP := clientIPMiddleware()
+	return func(next http.Handler) http.Handler {
+		limited := clientIP(httprate.LimitBy(n, window, clientIPKey)(next))
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if !strings.HasPrefix(r.URL.Path, "/api/") {
+				next.ServeHTTP(w, r)
+				return
+			}
+			limited.ServeHTTP(w, r)
+		})
 	}
+}
 
-	var (
-		mu      sync.Mutex
-		clients = make(map[string]*client)
-	)
+func clientIPMiddleware() func(http.Handler) http.Handler {
+	spec := strings.TrimSpace(os.Getenv("TETHER_TRUSTED_PROXIES"))
+	switch strings.ToLower(spec) {
+	case "", "direct", "none":
+		return middleware.ClientIPFromRemoteAddr
+	case "cloudflare":
+		return middleware.ClientIPFromHeader("CF-Connecting-IP")
+	case "traefik", "nginx", "standard":
+		return middleware.ClientIPFromHeader("X-Real-IP")
 
-	// Clean up old clients every minute
-	go func() {
-		for {
-			time.Sleep(time.Minute)
-			mu.Lock()
-			for ip, client := range clients {
-				if time.Since(client.lastSeen) > 3*time.Minute {
-					delete(clients, ip)
-				}
-			}
-			mu.Unlock()
+	default:
+		// Comma-separated CIDR ranges or proxy hop count
+		cidrs := strings.Split(spec, ",")
+		for i := range cidrs {
+			cidrs[i] = strings.TrimSpace(cidrs[i])
 		}
-	}()
-
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ip, _, err := net.SplitHostPort(r.RemoteAddr)
-		if err != nil {
-			ip = r.RemoteAddr
-		}
-		if fwd := r.Header.Get("X-Forwarded-For"); fwd != "" {
-			if first, _, ok := strings.Cut(fwd, ","); ok {
-				ip = strings.TrimSpace(first)
-			} else {
-				ip = strings.TrimSpace(fwd)
-			}
-		}
-
-		mu.Lock()
-		if _, found := clients[ip]; !found {
-			clients[ip] = &client{limiter: rate.NewLimiter(RPS, Burst)}
-		}
-		clients[ip].lastSeen = time.Now()
-		if !clients[ip].limiter.Allow() {
-			mu.Unlock()
-			http.Error(w, "Too many requests", http.StatusTooManyRequests)
-			return
-		}
-		mu.Unlock()
-
-		next.ServeHTTP(w, r)
-	})
+		return middleware.ClientIPFromXFF(cidrs...)
+	}
 }

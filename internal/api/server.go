@@ -9,39 +9,74 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
-	"net/http/pprof"
 	"time"
 
-	"github.com/vearutop/statigz"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/httplog/v3"
+	"github.com/rs/cors"
+
+	"github.com/mizuchilabs/kata/logx"
 
 	"github.com/mizuchilabs/tether/internal/config"
 	"github.com/mizuchilabs/tether/web"
 )
 
 type Server struct {
-	mux *http.ServeMux
+	mux *chi.Mux
 	cfg *config.Config
 }
 
-func New(cfg *config.Config) *Server {
+func New(ctx context.Context, cfg *config.Config) *Server {
+	mux := chi.NewRouter()
+
+	if logx.IsTerminal() {
+		mux.Use(middleware.Logger)
+		mux.Use(middleware.Recoverer)
+	} else {
+		mux.Use(httplog.RequestLogger(slog.Default(), &httplog.Options{
+			RecoverPanics: true,
+			Schema:        httplog.SchemaOTEL,
+			Skip: func(req *http.Request, respStatus int) bool {
+				return respStatus < http.StatusBadRequest && req.URL.Path == "/healthz"
+			},
+		}))
+	}
+	mux.Use(cors.Default().Handler)
+	mux.Use(middleware.RequestSize(1 << 20))
+	mux.Use(securityHeaders())
+	mux.Use(rateLimitAPI(100, time.Minute))
+	mux.Use(middleware.CleanPath)
+
+	mux.Group(func(r chi.Router) {
+		r.Post("/api/login", Login(cfg.Token))
+		r.Post("/api/logout", Logout())
+		r.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte("ok"))
+		})
+		if !cfg.NoWeb {
+			r.Handle("/*", web.Handler())
+		}
+	})
+	mux.Group(func(r chi.Router) {
+		r.Use(WithAuth(cfg.Token))
+		r.Get("/api/ws", AgentWS(cfg.State))
+		r.Get("/api/events", EventStream(ctx, cfg.State))
+		r.Get("/api/envs", PublishEnvs(cfg.State))
+		r.Get("/config", PublishConfig(cfg.State))
+	})
+
 	return &Server{
-		mux: http.NewServeMux(),
+		mux: mux,
 		cfg: cfg,
 	}
 }
 
 func (s *Server) Start(ctx context.Context) error {
-	s.registerServices(ctx)
-
-	chain := NewChain(
-		s.WithLogger,
-		WithRateLimit,
-		WithBodyLimit,
-		WithSecurityHeaders,
-	)
 	server := &http.Server{
 		Addr:              net.JoinHostPort("0.0.0.0", s.cfg.Port),
-		Handler:           chain.Then(s.mux),
+		Handler:           s.mux,
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      30 * time.Second,
@@ -68,32 +103,5 @@ func (s *Server) Start(ctx context.Context) error {
 
 	case err := <-serverErr:
 		return fmt.Errorf("server error: %w", err)
-	}
-}
-
-func (s *Server) registerServices(ctx context.Context) {
-	protec := NewChain(s.WithAuth)
-
-	s.mux.Handle("POST /api/login", Login(s.cfg.Token))
-	s.mux.Handle("POST /api/logout", Logout())
-	s.mux.Handle("GET /api/ws", protec.ThenFunc(AgentWS(s.cfg.State)))
-	s.mux.Handle("GET /api/events", protec.ThenFunc(EventStream(ctx, s.cfg.State)))
-	s.mux.Handle("GET /api/envs", protec.ThenFunc(PublishEnvs(s.cfg.State)))
-	s.mux.Handle("GET /config", protec.ThenFunc(PublishConfig(s.cfg.State)))
-
-	s.mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	})
-
-	if !s.cfg.NoWeb {
-		s.mux.Handle("/", statigz.FileServer(web.StaticFS, statigz.FSPrefix("build")))
-	}
-
-	if s.cfg.Debug {
-		s.mux.HandleFunc("/debug/pprof/", pprof.Index)
-		s.mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-		s.mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
-		s.mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-		s.mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
 	}
 }

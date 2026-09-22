@@ -30,7 +30,7 @@ func main() {
 			if err != nil {
 				return err
 			}
-			return api.New(cfg).Start(ctx)
+			return api.New(ctx, cfg).Start(ctx)
 		},
 		Flags: []cli.Flag{
 			&cli.BoolFlag{

@@ -13,21 +13,23 @@ type LoginRequest struct {
 }
 
 // WithAuth checks the request token before calling the next handler.
-func (s *Server) WithAuth(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if s.cfg.Token == "" {
-			next.ServeHTTP(w, r)
-			return
-		}
+func WithAuth(expectedToken string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if expectedToken == "" {
+				next.ServeHTTP(w, r)
+				return
+			}
 
-		token := util.GetAccessToken(r.Header)
-		if token != "" && subtle.ConstantTimeCompare([]byte(s.cfg.Token), []byte(token)) == 1 {
-			next.ServeHTTP(w, r)
-			return
-		}
+			token := util.GetAccessToken(r.Header)
+			if token != "" && subtle.ConstantTimeCompare([]byte(expectedToken), []byte(token)) == 1 {
+				next.ServeHTTP(w, r)
+				return
+			}
 
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-	})
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		})
+	}
 }
 
 // Login validates the secret and sets an access cookie.
