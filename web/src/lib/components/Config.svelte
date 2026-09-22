@@ -8,7 +8,7 @@
 	import { Spinner } from '$lib/components/ui/spinner';
 	import * as Tabs from '$lib/components/ui/tabs';
 	import { UseClipboard } from '$lib/hooks/use-clipboard.svelte';
-	import { lang } from '$lib/store.svelte';
+	import { env, lang } from '$lib/store.svelte';
 	import {
 		Bug,
 		CheckIcon,
@@ -29,8 +29,6 @@
 	import { createHighlighter } from 'shiki';
 	import YAML from 'yaml';
 
-	let { env }: { env: string } = $props();
-
 	let config = $state.raw<any>(null);
 	let isLoading = $state(false);
 	let error = $state('');
@@ -50,12 +48,12 @@
 	});
 
 	async function fetchConfig() {
-		if (!env) return;
+		if (!env.current) return;
 		isLoading = true;
 		error = '';
 
 		try {
-			config = await api.config(env);
+			config = await api.config(env.current);
 		} catch (err: any) {
 			error = err.message || 'Failed to fetch configuration.';
 		} finally {
@@ -67,7 +65,7 @@
 		if (!env) return;
 		fetchConfig();
 
-		const eventSource = api.events(env);
+		const eventSource = api.events(env.current);
 		eventSource.onmessage = (event) => {
 			try {
 				config = JSON.parse(event.data);
@@ -199,7 +197,7 @@
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement('a');
 		a.href = url;
-		a.download = `${env}.${lang.current}`;
+		a.download = `${env.current}.${lang.current}`;
 		document.body.appendChild(a);
 		a.click();
 		document.body.removeChild(a);
@@ -327,7 +325,9 @@
 			<Tabs.Root value={lang.current} onValueChange={(v) => (lang.current = v)}>
 				<Tabs.List>
 					{#each ['yaml', 'json', 'toml'] as language (language)}
-						<Tabs.Trigger value={language} class="font-mono text-xs">{env}.{language}</Tabs.Trigger>
+						<Tabs.Trigger value={language} class="font-mono text-xs">
+							{env.current}.{language}
+						</Tabs.Trigger>
 					{/each}
 				</Tabs.List>
 			</Tabs.Root>

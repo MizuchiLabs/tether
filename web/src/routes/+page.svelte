@@ -1,75 +1,13 @@
 <script lang="ts">
-	import { api } from '$lib/api';
 	import Config from '$lib/components/Config.svelte';
 	import * as Empty from '$lib/components/ui/empty';
-	import * as Select from '$lib/components/ui/select';
-	import { loggedIn } from '$lib/store.svelte';
+	import { env } from '$lib/store.svelte';
 	import { Cloud } from '@lucide/svelte';
-
-	let envs = $state.raw<string[]>([]);
-	let env = $state('');
-
-	$effect(() => {
-		if (!loggedIn.current) return;
-
-		let timeoutId: number | undefined;
-		async function pollEnvs() {
-			if (!loggedIn.current) return;
-			try {
-				const data = await api.envs();
-				envs = Array.isArray(data) ? data : [];
-
-				if (envs.length > 0) {
-					if (!env) {
-						env = envs.includes('default') ? 'default' : envs[0];
-					}
-					return;
-				}
-			} catch {
-				// ignore
-			}
-			timeoutId = window.setTimeout(pollEnvs, 5000);
-		}
-
-		pollEnvs();
-		return () => {
-			if (timeoutId) clearTimeout(timeoutId);
-		};
-	});
 </script>
 
-<div class="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6">
-	<div class="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-		<div>
-			<h2 class="text-2xl font-bold tracking-tight">Environment Explorer</h2>
-			<p class="text-sm text-muted-foreground">
-				View dynamic Traefik routing configurations and services pushed by your agents.
-			</p>
-		</div>
-
-		{#if envs.length > 0}
-			<div class="flex items-center gap-4">
-				<span class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-					Environment
-				</span>
-				<Select.Root type="single" bind:value={env}>
-					<Select.Trigger class="w-40">
-						{env || 'Select...'}
-					</Select.Trigger>
-			<Select.Content>
-					<Select.Group>
-						{#each envs as item (item)}
-							<Select.Item value={item}>{item}</Select.Item>
-						{/each}
-					</Select.Group>
-				</Select.Content>
-				</Select.Root>
-			</div>
-		{/if}
-	</div>
-
-	{#if env}
-		<Config {env} />
+<div class="mx-auto mt-4 flex w-full max-w-5xl flex-1 flex-col gap-6">
+	{#if env.current}
+		<Config />
 	{:else}
 		<Empty.Root class="border border-dashed">
 			<Empty.Header>
