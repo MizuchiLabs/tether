@@ -8,7 +8,7 @@ require (
 	github.com/go-chi/chi/v5 v5.3.2
 	github.com/go-chi/httplog/v3 v3.5.0
 	github.com/go-chi/httprate v0.16.0
-	github.com/mizuchilabs/kata v0.1.12
+	github.com/mizuchilabs/kata v0.1.13
 	github.com/rs/cors v1.11.1
 	github.com/traefik/traefik/v3 v3.7.13
 	github.com/unrolled/secure v1.17.0
