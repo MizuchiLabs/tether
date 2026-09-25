@@ -1,0 +1,57 @@
+# git-cliff configuration
+# https://git-cliff.org/docs/configuration
+
+[changelog]
+body = """
+{% if version %}\
+    ## [{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+{% else %}\
+    ## [unreleased]
+{% endif %}\
+{% for group, commits in commits | group_by(attribute="group") %}
+    ### {{ group | striptags | trim | upper_first }}
+    {% for commit in commits %}
+        - {% if commit.scope %}{{ commit.scope }}: {% endif %}\
+            {% if commit.breaking %}[breaking] {% endif %}\
+            {{ commit.message | upper_first }}\
+            {% if commit.pr_number %} [#{{ commit.pr_number }}]{% endif %}\
+    {% endfor %}
+{% endfor %}\n
+"""
+footer = """
+{% if version %}\
+    {% for commit in commits %}\
+        {% if commit.pr_number %}\
+            [#{{ commit.pr_number }}]: https://github.com/mizuchilabs/tether/pull/{{ commit.pr_number }}
+        {% endif %}\
+    {% endfor %}\
+{% endif %}
+"""
+trim = true
+
+[remote.github]
+owner = "mizuchilabs"
+repo = "tether"
+
+[git]
+filter_unconventional = true
+protect_breaking_commits = true
+filter_commits = true
+topo_order_commits = true
+sort_commits = "oldest"
+tag_pattern = '^v[0-9]+\.[0-9]+\.[0-9]+$'
+
+commit_parsers = [
+  { message = "^chore\\(deps\\)", skip = true },
+  { message = "^chore\\(deps-dev\\)", skip = true },
+  { message = "^feat", group = "<!-- 00 -->Features" },
+  { message = "^fix", group = "<!-- 01 -->Bug Fixes" },
+  { message = "^sec", group = "<!-- 02 -->Security" },
+  { message = "^perf", group = "<!-- 03 -->Performance Improvements" },
+  { message = "^refactor", group = "<!-- 04 -->Refactoring" },
+  { message = "^test", group = "<!-- 05 -->Testing" },
+  { message = "^doc", group = "<!-- 06 -->Documentation" },
+  { message = "^style", group = "<!-- 07 -->Styling" },
+  { message = "^revert", group = "<!-- 08 -->Reverts" },
+  { message = "^chore|^ci|^build", group = "<!-- 09 -->Miscellaneous" },
+]

@@ -8,14 +8,53 @@ on:
       - "v*"
   workflow_dispatch:
 
-permissions:
-  contents: write
-  packages: write
-  id-token: write
-  issues: write
-  pull-requests: write
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
+  tag:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      bump: ${{ steps.version.outputs.bump }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: taiki-e/install-action@git-cliff
+
+      - name: Check version bump
+        id: version
+        run: |
+          CURRENT_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          NEXT_TAG=$(git-cliff --bumped-version)
+
+          echo "current: $CURRENT_TAG"
+          echo "next:    $NEXT_TAG"
+          if [ "$CURRENT_TAG" = "$NEXT_TAG" ]; then
+            echo "No conventional commits warranting a release. Skipping."
+            echo "bump=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Bumping $CURRENT_TAG to $NEXT_TAG"
+            echo "bump=true" >> "$GITHUB_OUTPUT"
+            echo "version=${NEXT_TAG#v}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Tag and push
+        if: steps.version.outputs.bump == 'true'
+        run: |
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "v${{ steps.version.outputs.version }}" \
+            -m "v${{ steps.version.outputs.version }}"
+          git push origin "v${{ steps.version.outputs.version }}"
+
+      - name: No-op summary
+        if: steps.version.outputs.bump != 'true'
+        run: echo "No conventional commits warranting a release." >> "$GITHUB_STEP_SUMMARY"
+
   release:
     runs-on: ubuntu-latest
     steps:
@@ -51,65 +90,31 @@ jobs:
         with:
           upload-release-assets: false
 
+      - name: Install Ko
+        uses: ko-build/setup-ko@v0.10
+
       - name: Build frontend
         working-directory: web
         run: pnpm install && pnpm build
-
-      - name: Setup Go
-        uses: actions/setup-go@v7
-        with:
-          go-version-file: "go.mod"
 
       - name: Run GolangCI-Lint
         uses: golangci/golangci-lint-action@v9
         with:
           args: --timeout=10m
 
-      # TODO: Enable when traefik supports newer crypto package
-      # - uses: golang/govulncheck-action@v1
-      #   with:
-      #     repo-checkout: false
+      - uses: golang/govulncheck-action@v1
+        with:
+          repo-checkout: false
 
-      - name: Check if module is tidy
-        run: |
-          go mod tidy
-          git diff --exit-code go.mod go.sum || (echo "go.mod/go.sum is not tidy. Please run 'go mod tidy' and commit the changes." && exit 1)
+      - uses: taiki-e/install-action@git-cliff
 
-      - name: Verify build
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-        uses: goreleaser/goreleaser-action@v7
+      - name: Generate release notes
+        run: git-cliff --latest --strip header --config cliff.toml -o "$RUNNER_TEMP/release-notes.md"
+
+      - uses: goreleaser/goreleaser-action@v7
         with:
           version: latest
-          args: release --snapshot --clean
-        env:
-          COSIGN_YES: "true"
-          GOPRIVATE: github.com/mizuchilabs/*
-
-      - name: Run Semantic Release
-        id: semantic
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-          npx semantic-release --plugins "@semantic-release/commit-analyzer,@semantic-release/release-notes-generator,@semantic-release/github"
-          git fetch --tags --force
-          NEW_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-
-          if [ "$PREV_TAG" != "$NEW_TAG" ] && [ -n "$NEW_TAG" ]; then
-            echo "released=true" >> "$GITHUB_OUTPUT"
-            echo "New release $NEW_TAG generated"
-          else
-            echo "released=false" >> "$GITHUB_OUTPUT"
-            echo "No new release generated"
-          fi
-
-      - name: Run GoReleaser
-        if: github.event_name == 'push' || steps.semantic.outputs.released == 'true'
-        uses: goreleaser/goreleaser-action@v7
-        with:
-          version: latest
-          args: release --clean
+          args: release --clean --release-notes=${{ runner.temp }}/release-notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COSIGN_YES: "true"
