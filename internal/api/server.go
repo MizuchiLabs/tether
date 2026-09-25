@@ -31,14 +31,14 @@ func New(ctx context.Context, cfg *config.Config) *Server {
 	mux := chi.NewRouter()
 
 	if logx.IsTerminal() {
-		mux.Use(middleware.Logger)
+		mux.Use(terminalLogger())
 		mux.Use(middleware.Recoverer)
 	} else {
 		mux.Use(httplog.RequestLogger(slog.Default(), &httplog.Options{
 			RecoverPanics: true,
 			Schema:        httplog.SchemaOTEL,
 			Skip: func(req *http.Request, respStatus int) bool {
-				return respStatus < http.StatusBadRequest && req.URL.Path == "/healthz"
+				return quietRequest(req.URL.Path, respStatus)
 			},
 		}))
 	}
