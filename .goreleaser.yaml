@@ -4,7 +4,6 @@ report_sizes: true
 
 before:
   hooks:
-    # build here, goreleaser checks for a clean git tree before these hooks
     - go generate ./web
     - go fmt ./...
     - go vet ./...
