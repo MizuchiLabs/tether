@@ -93,10 +93,6 @@ jobs:
       - name: Install Ko
         uses: ko-build/setup-ko@v0.10
 
-      - name: Build frontend
-        working-directory: web
-        run: pnpm install && pnpm build
-
       - name: Run GolangCI-Lint
         uses: golangci/golangci-lint-action@v9
         with:
