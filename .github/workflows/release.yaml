@@ -12,6 +12,11 @@ concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+
 jobs:
   tag:
     runs-on: ubuntu-latest
