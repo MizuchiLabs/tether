@@ -29,7 +29,7 @@
 		"@tailwindcss/vite": "^4.3.3",
 		"@types/node": "^26.6.2",
 		"@typescript/native": "npm:typescript@^7.0.2",
-		"bits-ui": "2.19.2",
+		"bits-ui": "2.19.3",
 		"clsx": "^2.1.1",
 		"js-toml": "^2.0.1",
 		"mode-watcher": "^1.1.0",
