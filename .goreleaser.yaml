@@ -84,6 +84,3 @@ release:
   replace_existing_draft: true
   replace_existing_artifacts: true
   mode: append
-
-changelog:
-  disable: true
