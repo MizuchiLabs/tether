@@ -1,26 +1,4 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended",
-    ":semanticCommits",
-    ":disableDependencyDashboard",
-    "security:minimumReleaseAgeNpm",
-    ":maintainLockFilesWeekly"
-  ],
-  "postUpdateOptions": ["gomodTidy", "gomodUpdateImportPaths"],
-  "timezone": "Europe/Vienna",
-  "packageRules": [
-    {
-      "matchPackageNames": ["*"],
-      "automerge": true
-    },
-    {
-      "matchUpdateTypes": ["lockFileMaintenance"],
-      "automerge": true
-    }
-  ],
-  "platformAutomerge": true,
-  "separateMinorPatch": true,
-  "vulnerabilityAlerts": { "enabled": true },
-  "osvVulnerabilityAlerts": true
+  "extends": ["local>MizuchiLabs/.github"]
 }

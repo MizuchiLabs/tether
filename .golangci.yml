@@ -12,7 +12,7 @@ formatters:
   settings:
     goimports:
       local-prefixes:
-        - github.com/mizuchilabs/tether
+        - github.com/mizuchilabs
     golines:
       max-len: 120
 
@@ -32,6 +32,7 @@ linters:
     - errcheck
     - errname
     - errorlint
+    - exhaustive
     - exptostd
     - fatcontext
     - funcorder
@@ -55,7 +56,6 @@ linters:
     - musttag
     - nakedret
     - nilnesserr
-    - noctx
     - noctx
     - nolintlint
     - nosprintfhostport
@@ -113,6 +113,12 @@ linters:
     errcheck:
       check-type-assertions: true
 
+    exhaustive:
+      check:
+        - switch
+        - map
+      default-signifies-exhaustive: true
+
     funcorder:
       struct-method: false
 
@@ -141,7 +147,7 @@ linters:
       max-func-lines: 0
 
     nolintlint:
-      allow-no-explanation: [funlen, gocognit, golines]
+      allow-no-explanation: [golines]
       require-explanation: true
       require-specific: true
 
@@ -186,13 +192,8 @@ linters:
           - bodyclose
           - dupl
           - errcheck
-          - funlen
-          - gocognit
           - goconst
           - gosec
           - noctx
       - path: 'main\.go'
-        linters:
-          - cyclop
-          - gocognit
-          - funlen
+        linters: [cyclop]

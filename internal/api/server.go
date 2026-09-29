@@ -14,6 +14,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/httplog/v3"
+
 	"github.com/mizuchilabs/kata/logx"
 
 	"github.com/mizuchilabs/tether/internal/state"

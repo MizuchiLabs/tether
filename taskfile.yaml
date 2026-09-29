@@ -35,7 +35,6 @@ tasks:
 
   lint:
     desc: Run go vet & lint
-    ignore_error: true
     cmds:
       - go mod tidy
       - go fmt ./...
@@ -50,9 +49,3 @@ tasks:
       - goreleaser --snapshot --clean --skip=validate,sign,sbom,archive
       - docker tag goreleaser.ko.local:latest $IMAGE:nightly
       - grype $IMAGE:nightly
-
-  snapshot:push:
-    desc: Build and push snapshot to registry
-    deps: [snapshot]
-    cmds:
-      - docker push $IMAGE:nightly

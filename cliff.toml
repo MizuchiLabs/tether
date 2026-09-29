@@ -14,24 +14,10 @@ body = """
         - {% if commit.scope %}{{ commit.scope }}: {% endif %}\
             {% if commit.breaking %}[breaking] {% endif %}\
             {{ commit.message | upper_first }}\
-            {% if commit.pr_number %} [#{{ commit.pr_number }}]{% endif %}\
     {% endfor %}
 {% endfor %}\n
 """
-footer = """
-{% if version %}\
-    {% for commit in commits %}\
-        {% if commit.pr_number %}\
-            [#{{ commit.pr_number }}]: https://github.com/mizuchilabs/tether/pull/{{ commit.pr_number }}
-        {% endif %}\
-    {% endfor %}\
-{% endif %}
-"""
 trim = true
-
-[remote.github]
-owner = "mizuchilabs"
-repo = "tether"
 
 [git]
 filter_unconventional = true
@@ -55,3 +41,6 @@ commit_parsers = [
   { message = "^revert", group = "<!-- 08 -->Reverts" },
   { message = "^chore|^ci|^build", group = "<!-- 09 -->Miscellaneous" },
 ]
+
+[bump]
+initial_tag = "v0.1.0"
