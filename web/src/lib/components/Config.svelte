@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { api } from '$lib/api';
 	import { Button } from '$lib/components/ui/button';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import * as Empty from '$lib/components/ui/empty';
@@ -10,7 +9,6 @@
 	import { UseClipboard } from '$lib/hooks/use-clipboard.svelte';
 	import { env, lang } from '$lib/store.svelte';
 	import {
-		Bug,
 		CheckIcon,
 		CopyIcon,
 		DeleteIcon,
@@ -20,7 +18,6 @@
 		GlobeIcon,
 		Layers2Icon,
 		LockIcon,
-		RefreshCw,
 		RouteIcon,
 		SearchIcon,
 		WorkflowIcon
@@ -29,9 +26,8 @@
 	import { createHighlighter } from 'shiki';
 	import YAML from 'yaml';
 
-	let config = $state.raw<any>(null);
-	let isLoading = $state(false);
-	let error = $state('');
+	let { config }: { config: Record<string, any> | undefined } = $props();
+
 	let highlighter = $state<Awaited<ReturnType<typeof createHighlighter>> | null>(null);
 	let search = $state('');
 	let filter = $state('all');
@@ -45,39 +41,6 @@
 		}).then((h) => {
 			highlighter = h;
 		});
-	});
-
-	async function fetchConfig() {
-		if (!env.current) return;
-		isLoading = true;
-		error = '';
-
-		try {
-			config = await api.config(env.current);
-		} catch (err: any) {
-			error = err.message || 'Failed to fetch configuration.';
-		} finally {
-			isLoading = false;
-		}
-	}
-
-	$effect(() => {
-		if (!env.current) return;
-		fetchConfig();
-
-		const eventSource = api.events(env.current);
-		eventSource.onmessage = (event) => {
-			try {
-				config = JSON.parse(event.data);
-				error = '';
-			} catch (err) {
-				console.error('Failed to parse SSE data', err);
-			}
-		};
-
-		return () => {
-			eventSource.close();
-		};
 	});
 
 	const filteredConfig = $derived.by(() => {
@@ -260,14 +223,9 @@
 			</DropdownMenu.Root>
 		{/if}
 	</div>
-
-	<Button variant="outline" onclick={fetchConfig} disabled={isLoading}>
-		<RefreshCw class={{ 'animate-spin': isLoading }} data-icon="inline-start" />
-		Refresh
-	</Button>
 </div>
 
-{#if isLoading}
+{#if !config}
 	<Empty.Root class="border border-dashed">
 		<Empty.Header>
 			<Empty.Media variant="icon">
@@ -275,16 +233,6 @@
 			</Empty.Media>
 			<Empty.Title>Loading configuration...</Empty.Title>
 			<Empty.Description>Fetching configuration from Tether.</Empty.Description>
-		</Empty.Header>
-	</Empty.Root>
-{:else if error}
-	<Empty.Root class="border border-dashed">
-		<Empty.Header>
-			<Empty.Media variant="icon" class="bg-destructive/30">
-				<Bug class="text-destructive" />
-			</Empty.Media>
-			<Empty.Title class="text-destructive">Error</Empty.Title>
-			<Empty.Description class="text-destructive/75">{error}</Empty.Description>
 		</Empty.Header>
 	</Empty.Root>
 {:else if isEmpty}

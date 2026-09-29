@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/mizuchilabs/kata/buildinfo"
@@ -11,7 +12,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/mizuchilabs/tether/internal/api"
-	"github.com/mizuchilabs/tether/internal/config"
+	"github.com/mizuchilabs/tether/internal/state"
 )
 
 func main() {
@@ -26,11 +27,19 @@ func main() {
 			return ctx, nil
 		},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
-			cfg, err := config.New(ctx, cmd)
+			if cmd.String("token") == "" {
+				slog.Warn("Authentication is disabled")
+			}
+			st, err := state.New(ctx, cmd.String("config"))
 			if err != nil {
 				return err
 			}
-			return api.New(ctx, cfg).Start(ctx)
+			return api.Serve(ctx, st, api.Config{
+				Port:           cmd.String("port"),
+				Token:          cmd.String("token"),
+				NoWeb:          cmd.Bool("no-web"),
+				TrustedProxies: cmd.String("trusted-proxies"),
+			})
 		},
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
@@ -63,6 +72,11 @@ func main() {
 				Aliases: []string{"t"},
 				Usage:   "Shared secret token for agent authentication",
 				Sources: cli.EnvVars("TETHER_TOKEN"),
+			},
+			&cli.StringFlag{
+				Name:    "trusted-proxies",
+				Usage:   "Where to read the client IP for rate limiting: direct, cloudflare, traefik, or CIDRs",
+				Sources: cli.EnvVars("TETHER_TRUSTED_PROXIES"),
 			},
 		},
 	}

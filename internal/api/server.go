@@ -3,7 +3,7 @@ package api
 
 import (
 	"context"
-	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -14,81 +14,65 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/httplog/v3"
-	"github.com/rs/cors"
-
 	"github.com/mizuchilabs/kata/logx"
 
-	"github.com/mizuchilabs/tether/internal/config"
+	"github.com/mizuchilabs/tether/internal/state"
 	"github.com/mizuchilabs/tether/web"
 )
 
-type Server struct {
-	mux *chi.Mux
-	cfg *config.Config
+// Config holds the server settings from the CLI.
+type Config struct {
+	Port           string
+	Token          string
+	NoWeb          bool
+	TrustedProxies string
 }
 
-func New(ctx context.Context, cfg *config.Config) *Server {
+// Serve runs the HTTP server until ctx is done.
+func Serve(ctx context.Context, st *state.State, cfg Config) error {
 	mux := chi.NewRouter()
-
-	if logx.IsTerminal() {
-		mux.Use(terminalLogger())
-		mux.Use(middleware.Recoverer)
-	} else {
-		mux.Use(httplog.RequestLogger(slog.Default(), &httplog.Options{
-			RecoverPanics: true,
-			Schema:        httplog.SchemaOTEL,
-			Skip: func(req *http.Request, respStatus int) bool {
-				return quietRequest(req.URL.Path, respStatus)
-			},
-		}))
-	}
-	mux.Use(cors.Default().Handler)
+	mux.Use(httplog.RequestLogger(slog.Default(), &httplog.Options{
+		RecoverPanics: true,
+		Schema:        httplog.SchemaOTEL.Concise(logx.IsTerminal()),
+		Skip:          quietRequest,
+	}))
 	mux.Use(middleware.RequestSize(1 << 20))
 	mux.Use(securityHeaders())
-	mux.Use(rateLimitAPI(100, time.Minute))
+	mux.Use(rateLimitAPI(cfg.TrustedProxies, 100, time.Minute))
 	mux.Use(middleware.CleanPath)
 
-	mux.Group(func(r chi.Router) {
-		r.Post("/api/login", Login(cfg.Token))
-		r.Post("/api/logout", Logout())
-		r.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) {
-			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte("ok"))
-		})
-		if !cfg.NoWeb {
-			r.Handle("/*", web.Handler())
-		}
+	mux.Post("/api/login", login(cfg.Token))
+	mux.Post("/api/logout", logout)
+	mux.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte("ok"))
 	})
-	mux.Group(func(r chi.Router) {
-		r.Use(WithAuth(cfg.Token))
-		r.Get("/api/ws", AgentWS(cfg.State))
-		r.Get("/api/events", EventStream(ctx, cfg.State))
-		r.Get("/api/envs", PublishEnvs(cfg.State))
-		r.Get("/config", PublishConfig(cfg.State))
-	})
-
-	return &Server{
-		mux: mux,
-		cfg: cfg,
+	if !cfg.NoWeb {
+		mux.Handle("/*", web.Handler())
 	}
-}
+	mux.Group(func(r chi.Router) {
+		r.Use(withAuth(cfg.Token))
+		r.Get("/api/ws", agentWS(st))
+		r.Get("/api/events", eventStream(ctx, st))
+		r.Get("/api/envs", func(w http.ResponseWriter, _ *http.Request) {
+			writeJSON(w, st.EnvNames())
+		})
+		r.Get("/config", publishConfig(st))
+	})
 
-func (s *Server) Start(ctx context.Context) error {
 	server := &http.Server{
-		Addr:              net.JoinHostPort("0.0.0.0", s.cfg.Port),
-		Handler:           s.mux,
+		Addr:              net.JoinHostPort("0.0.0.0", cfg.Port),
+		Handler:           mux,
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      30 * time.Second,
 		IdleTimeout:       120 * time.Second,
-		MaxHeaderBytes:    1 << 20, // 1MiB
-		TLSConfig:         &tls.Config{MinVersion: tls.VersionTLS13},
+		MaxHeaderBytes:    1 << 20,
 	}
 
 	serverErr := make(chan error, 1)
 	go func() {
-		slog.Info("Server listening on", "port", s.cfg.Port)
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		slog.Info("Server listening", "port", cfg.Port)
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			serverErr <- err
 		}
 	}()
@@ -96,12 +80,27 @@ func (s *Server) Start(ctx context.Context) error {
 	select {
 	case <-ctx.Done():
 		slog.Info("Shutting down server...")
-		errShutdown := errors.New("shutdown timeout")
-		shutdownCtx, cancel := context.WithTimeoutCause(context.Background(), 3*time.Second, errShutdown)
+		shutdownCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 3*time.Second)
 		defer cancel()
 		return server.Shutdown(shutdownCtx)
-
 	case err := <-serverErr:
 		return fmt.Errorf("server error: %w", err)
 	}
+}
+
+// quietRequest skips logging successful polling and stream traffic. Failures always log.
+func quietRequest(r *http.Request, status int) bool {
+	if status >= http.StatusBadRequest {
+		return false
+	}
+	switch r.URL.Path {
+	case "/healthz", "/config", "/api/envs", "/api/ws", "/api/events":
+		return true
+	}
+	return false
+}
+
+func writeJSON(w http.ResponseWriter, v any) {
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(v)
 }

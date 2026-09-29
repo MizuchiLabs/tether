@@ -4,78 +4,72 @@ import (
 	"crypto/subtle"
 	"encoding/json"
 	"net/http"
-
-	"github.com/mizuchilabs/tether/internal/util"
+	"strings"
 )
 
-type LoginRequest struct {
-	Secret string `json:"secret"`
-}
+const accessCookie = "tether_access"
 
-// WithAuth checks the request token before calling the next handler.
-func WithAuth(expectedToken string) func(http.Handler) http.Handler {
+// withAuth checks the bearer token or access cookie before calling the next handler.
+func withAuth(token string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if expectedToken == "" {
+			if token == "" || validToken(token, requestToken(r)) {
 				next.ServeHTTP(w, r)
 				return
 			}
-
-			token := util.GetAccessToken(r.Header)
-			if token != "" && subtle.ConstantTimeCompare([]byte(expectedToken), []byte(token)) == 1 {
-				next.ServeHTTP(w, r)
-				return
-			}
-
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		})
 	}
 }
 
-// Login validates the secret and sets an access cookie.
-func Login(token string) http.HandlerFunc {
+// login validates the secret and sets an access cookie.
+func login(token string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-			return
+		var req struct {
+			Secret string `json:"secret"`
 		}
-
-		var req LoginRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, "Invalid request", http.StatusBadRequest)
 			return
 		}
-
-		if token != "" && subtle.ConstantTimeCompare([]byte(req.Secret), []byte(token)) != 1 {
+		if token != "" && !validToken(token, req.Secret) {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
-
-		http.SetCookie(w, &http.Cookie{
-			Name:     util.AccessTokenName,
-			Value:    req.Secret,
-			Path:     "/",
-			HttpOnly: true,
-			Secure:   true,
-			SameSite: http.SameSiteStrictMode,
-			MaxAge:   86400 * 7,
-		})
-		w.WriteHeader(http.StatusOK)
+		setAccessCookie(w, r, req.Secret, 86400*7)
 	}
 }
 
-// Logout clears the access cookie.
-func Logout() http.HandlerFunc {
-	return func(w http.ResponseWriter, _ *http.Request) {
-		http.SetCookie(w, &http.Cookie{
-			Name:     util.AccessTokenName,
-			Value:    "",
-			Path:     "/",
-			HttpOnly: true,
-			Secure:   true,
-			SameSite: http.SameSiteStrictMode,
-			MaxAge:   -1,
-		})
-		w.WriteHeader(http.StatusOK)
+func logout(w http.ResponseWriter, r *http.Request) {
+	setAccessCookie(w, r, "", -1)
+}
+
+// setAccessCookie marks the cookie Secure only over TLS, browsers drop Secure cookies on plain http.
+func setAccessCookie(w http.ResponseWriter, r *http.Request, value string, maxAge int) {
+	// #nosec G124 -- Secure is set whenever the request came over TLS
+	http.SetCookie(w, &http.Cookie{
+		Name:     accessCookie,
+		Value:    value,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https",
+		SameSite: http.SameSiteStrictMode,
+		MaxAge:   maxAge,
+	})
+}
+
+func requestToken(r *http.Request) string {
+	auth := r.Header.Get("Authorization")
+	// Scheme is case insensitive, see RFC 9110 Section 11.1.
+	if scheme, token, ok := strings.Cut(auth, " "); ok && strings.EqualFold(scheme, "Bearer") {
+		return token
 	}
+	if c, err := r.Cookie(accessCookie); err == nil {
+		return c.Value
+	}
+	return ""
+}
+
+func validToken(expected, got string) bool {
+	return got != "" && subtle.ConstantTimeCompare([]byte(expected), []byte(got)) == 1
 }

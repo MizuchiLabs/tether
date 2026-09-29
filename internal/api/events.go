@@ -10,28 +10,37 @@ import (
 	"github.com/mizuchilabs/tether/internal/state"
 )
 
-// EventStream returns an SSE endpoint that pushes config updates to clients.
-func EventStream(ctx context.Context, state *state.State) http.HandlerFunc {
+// eventStream pushes environment snapshots to the UI over SSE, starting with the current one.
+func eventStream(ctx context.Context, st *state.State) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/event-stream")
-		w.Header().Set("Cache-Control", "no-cache")
-		w.Header().Set("Connection", "keep-alive")
-
 		rc := http.NewResponseController(w)
-
 		if err := rc.SetWriteDeadline(time.Time{}); err != nil {
 			http.Error(w, "Failed to configure SSE connection", http.StatusInternalServerError)
 			return
 		}
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.Header().Set("Cache-Control", "no-cache")
 
 		env := r.URL.Query().Get("env")
+		updates := st.Subscribe(env)
+		defer st.Unsubscribe(env, updates)
 
-		updateCh := state.Subscribe(env)
-		defer state.Unsubscribe(env, updateCh)
+		send := func(s *state.Snapshot) error {
+			data, err := json.Marshal(s)
+			if err != nil {
+				return err
+			}
+			if _, err := fmt.Fprintf(w, "data: %s\n\n", data); err != nil {
+				return err
+			}
+			return rc.Flush()
+		}
+		if err := send(st.Snapshot(env)); err != nil {
+			return
+		}
 
 		ping := time.NewTicker(15 * time.Second)
 		defer ping.Stop()
-
 		for {
 			select {
 			case <-r.Context().Done():
@@ -39,13 +48,10 @@ func EventStream(ctx context.Context, state *state.State) http.HandlerFunc {
 			case <-ctx.Done():
 				return
 			case <-ping.C:
-				_, _ = fmt.Fprintf(w, ": ping\n\n")
+				_, _ = fmt.Fprint(w, ": ping\n\n")
 				_ = rc.Flush()
-			case newConfig := <-updateCh:
-				data, _ := json.Marshal(newConfig)
-				_, _ = fmt.Fprintf(w, "data: %s\n\n", data)
-
-				if err := rc.Flush(); err != nil {
+			case s := <-updates:
+				if err := send(s); err != nil {
 					return
 				}
 			}

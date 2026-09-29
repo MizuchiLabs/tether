@@ -3,270 +3,262 @@
 package state
 
 import (
+	"cmp"
 	"context"
-	"encoding/json"
-	"fmt"
 	"log/slog"
-	"os"
-	"path/filepath"
+	"maps"
+	"slices"
 	"sync"
-
-	"github.com/fsnotify/fsnotify"
-	"github.com/traefik/traefik/v3/pkg/config/dynamic"
-	"go.yaml.in/yaml/v3"
+	"time"
 )
 
-type Environment struct {
-	Master *dynamic.Configuration
-	Agents map[string]*dynamic.Configuration
-	Local  *dynamic.Configuration
+const (
+	defaultEnv = "default"
+
+	// expireAfter is how long a disconnected agent keeps its routes. Covers
+	// agent restarts and short network blips without dropping traffic.
+	expireAfter = 30 * time.Second
+)
+
+// Agent is a tetherd instance pushing its container config.
+type Agent struct {
+	Name      string    `json:"name"`
+	Addr      string    `json:"addr"`
+	Connected bool      `json:"connected"`
+	Since     time.Time `json:"since"`
+	Updated   time.Time `json:"updated"`
+	Routers   int       `json:"routers"`
+	Services  int       `json:"services"`
+
+	conns  int
+	config Config
+}
+
+// Snapshot is the merged view of one environment. Never mutated after creation.
+type Snapshot struct {
+	Config     Config          `json:"config"`
+	Agents     []Agent         `json:"agents"`
+	Collisions []Collision     `json:"collisions"`
+	Shared     []SharedService `json:"shared"`
+}
+
+type environment struct {
+	local    Config
+	agents   map[string]*Agent
+	snapshot *Snapshot
 }
 
 // State holds traefik configurations grouped by environment.
 type State struct {
 	mu          sync.RWMutex
-	Envs        map[string]*Environment
-	subscribers map[string][]chan *dynamic.Configuration
-	watchers    []*FileWatcher
+	envs        map[string]*environment
+	subscribers map[string][]chan *Snapshot
 }
 
-// FileWatcher tracks a single config file for live reloads.
-type FileWatcher struct {
-	file    string
-	env     string
-	watcher *fsnotify.Watcher
+// New creates the state and, if localFile is set, loads and watches it until ctx is done.
+func New(ctx context.Context, localFile string) (*State, error) {
+	s := &State{
+		envs:        make(map[string]*environment),
+		subscribers: make(map[string][]chan *Snapshot),
+	}
+	if localFile != "" {
+		if err := s.watchLocalFile(ctx, localFile); err != nil {
+			return nil, err
+		}
+	}
+	return s, nil
 }
 
-func New() *State {
-	return &State{
-		Envs:        make(map[string]*Environment),
-		subscribers: make(map[string][]chan *dynamic.Configuration),
-		watchers:    make([]*FileWatcher, 0),
-	}
-}
-
-// getEnv retrieves or creates an environment entry.
-func (s *State) getEnv(env string) *Environment {
-	// Default to a common pool if no group is specified
-	if env == "" {
-		env = "default"
-	}
-
-	if e, exists := s.Envs[env]; exists {
-		return e
-	}
-
-	newEnv := &Environment{
-		Master: &dynamic.Configuration{},
-		Agents: make(map[string]*dynamic.Configuration),
-	}
-	s.Envs[env] = newEnv
-	return newEnv
-}
-
-// GetEnvNames returns all registered environment names.
-func (s *State) GetEnvNames() []string {
+// EnvNames returns all registered environment names, sorted.
+func (s *State) EnvNames() []string {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-
-	names := make([]string, 0, len(s.Envs))
-	for name := range s.Envs {
-		names = append(names, name)
-	}
-	return names
+	return slices.Sorted(maps.Keys(s.envs))
 }
 
-// GetMaster returns the merged configuration for the given environment.
-func (s *State) GetMaster(env string) *dynamic.Configuration {
+// Snapshot returns the current merged view of the environment.
+func (s *State) Snapshot(env string) *Snapshot {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-
-	if env == "" {
-		env = "default"
+	if e, ok := s.envs[envName(env)]; ok {
+		return e.snapshot
 	}
-	if e, exists := s.Envs[env]; exists {
-		return e.Master
-	}
-	return &dynamic.Configuration{}
+	return &Snapshot{Config: Config{}}
 }
 
-// UpdateAgent replaces an agent's config and rebuilds the merged master.
-func (s *State) UpdateAgent(env, name string, data []byte) {
-	cfg := &dynamic.Configuration{}
-	if err := json.Unmarshal(data, cfg); err != nil {
-		slog.Error("Failed to unmarshal agent config", "agent", name, "error", err)
+// AgentConnected registers a new connection for the agent.
+func (s *State) AgentConnected(env, name, addr string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	a, ok := s.env(env).agents[name]
+	if !ok {
+		a = &Agent{Name: name}
+		s.env(env).agents[name] = a
+	}
+	if a.conns > 0 {
+		slog.Warn("Multiple agents share the same name", "agent", name, "env", envName(env), "addr", addr)
+	}
+	a.conns++
+	a.Connected = true
+	a.Addr = addr
+	a.Since = time.Now()
+	slog.Info("Agent connected", "agent", name, "env", envName(env), "addr", addr)
+}
+
+// UpdateAgent replaces an agent's config and rebuilds the environment.
+func (s *State) UpdateAgent(env, name string, cfg Config) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	a, ok := s.env(env).agents[name]
+	if !ok {
 		return
 	}
+	a.config = cfg
+	a.Updated = time.Now()
+	a.Routers, a.Services = cfg.count()
+	s.rebuild(env)
+}
 
+// AgentDisconnected drops a connection. Once the agent has no connections left
+// its routes are kept for expireAfter, then removed unless it reconnects.
+func (s *State) AgentDisconnected(env, name string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	envs := s.getEnv(env)
-	envs.Agents[name] = cfg
-	s.rebuildMaster(env)
+	a, ok := s.env(env).agents[name]
+	if !ok {
+		return
+	}
+	a.conns--
+	if a.conns > 0 {
+		return
+	}
+	a.Connected = false
+	a.Since = time.Now()
+	since := a.Since
+	slog.Info("Agent disconnected", "agent", name, "env", envName(env), "expires_in", expireAfter.String())
+	s.rebuild(env)
+
+	time.AfterFunc(expireAfter, func() { s.expireAgent(env, name, since) })
 }
 
-// parseFile reads a .yaml, .yml, or .json config file.
-func parseFile(path string) (*dynamic.Configuration, error) {
-	data, err := os.ReadFile(filepath.Clean(path))
-	if err != nil {
-		return nil, fmt.Errorf("failed to read local config: %w", err)
-	}
-
-	cfg := &dynamic.Configuration{}
-	ext := filepath.Ext(path)
-
-	if ext == ".yaml" || ext == ".yml" {
-		if err := yaml.Unmarshal(data, cfg); err != nil {
-			return nil, fmt.Errorf("failed to parse yaml: %w", err)
-		}
-	} else {
-		if err := json.Unmarshal(data, cfg); err != nil {
-			return nil, fmt.Errorf("failed to parse json: %w", err)
-		}
-	}
-	return cfg, nil
-}
-
-// LoadLocalFile reads a config file, stores it, and watches for live changes.
-func (s *State) LoadLocalFile(ctx context.Context, env, path string) error {
-	if path == "" {
-		return nil
-	}
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return nil
-	}
-
-	slog.Info("Loading local configuration file", "path", path)
-
-	cfg, err := parseFile(path)
-	if err != nil {
-		return err
-	}
-
-	s.mu.Lock()
-	envs := s.getEnv(env)
-	envs.Local = cfg
-	s.rebuildMaster(env)
-	s.mu.Unlock()
-
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		return fmt.Errorf("failed to create file watcher: %w", err)
-	}
-
-	fw := &FileWatcher{
-		file:    path,
-		env:     env,
-		watcher: watcher,
-	}
-
-	s.watchers = append(s.watchers, fw)
-
-	go func() {
-		if err := watcher.Add(path); err != nil {
-			slog.Error("Failed to watch config file", "path", path, "error", err)
-			return
-		}
-
-		defer func() { _ = watcher.Close() }()
-
-		for {
-			select {
-			case <-ctx.Done():
-				slog.Debug("Stopping config file watcher", "path", path)
-				return
-			case event, ok := <-watcher.Events:
-				if !ok {
-					return
-				}
-				if event.Has(fsnotify.Write) || event.Has(fsnotify.Create) || event.Has(fsnotify.Chmod) {
-					slog.Debug("Config file changed, reloading", "path", path)
-					cfg, err := parseFile(path)
-					if err != nil {
-						slog.Error("Failed to reload config", "path", path, "error", err)
-						continue
-					}
-
-					s.mu.Lock()
-					envs.Local = cfg
-					s.rebuildMaster(env)
-					s.mu.Unlock()
-				}
-			case err, ok := <-watcher.Errors:
-				if !ok {
-					return
-				}
-				slog.Error("Config watcher error", "path", path, "error", err)
-			}
-		}
-	}()
-
-	return nil
-}
-
-// rebuildMaster merges local and agent configs into a fresh master, then broadcasts.
-func (s *State) rebuildMaster(env string) {
-	envs := s.getEnv(env)
-	newMaster := &dynamic.Configuration{}
-	if envs.Local != nil {
-		newMaster.HTTP = mergeHTTP(newMaster.HTTP, envs.Local.HTTP)
-		newMaster.TCP = mergeTCP(newMaster.TCP, envs.Local.TCP)
-		newMaster.UDP = mergeUDP(newMaster.UDP, envs.Local.UDP)
-		newMaster.TLS = mergeTLS(newMaster.TLS, envs.Local.TLS)
-	}
-
-	for _, agentCfg := range envs.Agents {
-		newMaster.HTTP = mergeHTTP(newMaster.HTTP, agentCfg.HTTP)
-		newMaster.TCP = mergeTCP(newMaster.TCP, agentCfg.TCP)
-		newMaster.UDP = mergeUDP(newMaster.UDP, agentCfg.UDP)
-		newMaster.TLS = mergeTLS(newMaster.TLS, agentCfg.TLS)
-	}
-	envs.Master = newMaster
-
-	// Broadcast to listeners
-	if subs, exists := s.subscribers[env]; exists {
-		for _, ch := range subs {
-			// Non-blocking send: if a client is slow/hung, we drop the event
-			select {
-			case ch <- newMaster:
-			default:
-			}
-		}
-	}
-}
-
-// Subscribe returns a channel that receives config updates for the environment.
-func (s *State) Subscribe(env string) chan *dynamic.Configuration {
+// Subscribe returns a channel that receives snapshots for the environment.
+func (s *State) Subscribe(env string) chan *Snapshot {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if env == "" {
-		env = "default"
-	}
-
-	// Use a buffered channel (size 1) so broadcasting doesn't block
-	ch := make(chan *dynamic.Configuration, 1)
-	s.subscribers[env] = append(s.subscribers[env], ch)
+	ch := make(chan *Snapshot, 1)
+	s.subscribers[envName(env)] = append(s.subscribers[envName(env)], ch)
 	return ch
 }
 
-// Unsubscribe removes and closes a subscription channel.
-func (s *State) Unsubscribe(env string, ch chan *dynamic.Configuration) {
+// Unsubscribe removes a subscription channel.
+func (s *State) Unsubscribe(env string, ch chan *Snapshot) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.subscribers[envName(env)] = slices.DeleteFunc(s.subscribers[envName(env)], func(c chan *Snapshot) bool {
+		return c == ch
+	})
+}
+
+func (s *State) expireAgent(env, name string, since time.Time) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if env == "" {
-		env = "default"
+	e, ok := s.envs[envName(env)]
+	if !ok {
+		return
 	}
+	a, ok := e.agents[name]
+	if !ok || a.Connected || !a.Since.Equal(since) {
+		return
+	}
+	delete(e.agents, name)
+	slog.Warn("Agent expired, removing its routes", "agent", name, "env", envName(env))
+	s.rebuild(env)
+	if len(e.agents) == 0 && e.local == nil {
+		delete(s.envs, envName(env))
+	}
+}
 
-	subs := s.subscribers[env]
-	for i, sub := range subs {
-		if sub == ch {
-			// Remove the channel from the slice
-			s.subscribers[env] = append(subs[:i], subs[i+1:]...)
-			close(ch)
-			break
+func (s *State) setLocal(env string, cfg Config) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.env(env).local = cfg
+	s.rebuild(env)
+}
+
+// env returns the environment, creating it if needed. Caller holds the lock.
+func (s *State) env(name string) *environment {
+	name = envName(name)
+	if e, ok := s.envs[name]; ok {
+		return e
+	}
+	e := &environment{
+		agents:   make(map[string]*Agent),
+		snapshot: &Snapshot{Config: Config{}},
+	}
+	s.envs[name] = e
+	return e
+}
+
+// rebuild merges local and agent configs into a fresh snapshot, then broadcasts. Caller holds the lock.
+func (s *State) rebuild(env string) {
+	e := s.env(env)
+	prev := e.snapshot
+
+	m := newMerger()
+	m.add(localSource, e.local, true)
+	names := slices.Sorted(maps.Keys(e.agents))
+	agents := make([]Agent, 0, len(names))
+	for _, name := range names {
+		agents = append(agents, *e.agents[name])
+	}
+	// Online agents first, so a shared service never depends on an offline one.
+	for _, online := range []bool{true, false} {
+		for _, name := range names {
+			if a := e.agents[name]; a.Connected == online {
+				m.add(name, a.config, online)
+			}
 		}
 	}
+
+	slices.SortFunc(m.collisions, func(a, b Collision) int {
+		return cmp.Or(cmp.Compare(a.Kind, b.Kind), cmp.Compare(a.Name, b.Name), cmp.Compare(a.Source, b.Source))
+	})
+	for _, c := range m.collisions {
+		if !slices.Contains(prev.Collisions, c) {
+			slog.Warn("Collision detected, skipping", "env", envName(env), "kind", c.Kind, "name", c.Name,
+				"agent", c.Source, "owner", c.Owner)
+		}
+	}
+
+	shared := m.sharedServices()
+	for _, sh := range shared {
+		if !slices.ContainsFunc(prev.Shared, func(p SharedService) bool {
+			return p.Name == sh.Name && slices.Equal(p.Agents, sh.Agents)
+		}) {
+			slog.Info("Load balancing service across agents", "env", envName(env), "service", sh.Name,
+				"agents", sh.Agents)
+		}
+	}
+
+	e.snapshot = &Snapshot{Config: m.result(), Agents: agents, Collisions: m.collisions, Shared: shared}
+	for _, ch := range s.subscribers[envName(env)] {
+		// Drop the stale snapshot so slow clients always get the latest.
+		select {
+		case <-ch:
+		default:
+		}
+		ch <- e.snapshot
+	}
+}
+
+func envName(env string) string {
+	if env == "" {
+		return defaultEnv
+	}
+	return env
 }

@@ -3,10 +3,10 @@ services:
     image: ghcr.io/mizuchilabs/tether:latest
     container_name: tether
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      # - /path/to/dynamic.yml:/data/dynamic.yml # optional local config
+      # Mount the directory, not the file, so edits are picked up live.
+      # - /path/to/tether:/data # optional local config at /data/dynamic.yml
     environment:
-      - TETHER_SECRET=your-super-secret-key
+      - TETHER_TOKEN=your-super-secret-key
     networks:
       - proxy
     labels:

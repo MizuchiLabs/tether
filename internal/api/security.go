@@ -2,7 +2,6 @@ package api
 
 import (
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -40,8 +39,8 @@ func clientIPKey(r *http.Request) (string, error) {
 }
 
 // rateLimitAPI limits /api requests per client IP.
-func rateLimitAPI(n int, window time.Duration) func(http.Handler) http.Handler {
-	clientIP := clientIPMiddleware()
+func rateLimitAPI(trustedProxies string, n int, window time.Duration) func(http.Handler) http.Handler {
+	clientIP := clientIPMiddleware(trustedProxies)
 	return func(next http.Handler) http.Handler {
 		limited := clientIP(httprate.LimitBy(n, window, clientIPKey)(next))
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -54,8 +53,8 @@ func rateLimitAPI(n int, window time.Duration) func(http.Handler) http.Handler {
 	}
 }
 
-func clientIPMiddleware() func(http.Handler) http.Handler {
-	spec := strings.TrimSpace(os.Getenv("TETHER_TRUSTED_PROXIES"))
+func clientIPMiddleware(spec string) func(http.Handler) http.Handler {
+	spec = strings.TrimSpace(spec)
 	switch strings.ToLower(spec) {
 	case "", "direct", "none":
 		return middleware.ClientIPFromRemoteAddr
@@ -63,12 +62,11 @@ func clientIPMiddleware() func(http.Handler) http.Handler {
 		return middleware.ClientIPFromHeader("CF-Connecting-IP")
 	case "traefik", "nginx", "standard":
 		return middleware.ClientIPFromHeader("X-Real-IP")
-
 	default:
 		// Comma-separated CIDR ranges or proxy hop count
-		cidrs := strings.Split(spec, ",")
-		for i := range cidrs {
-			cidrs[i] = strings.TrimSpace(cidrs[i])
+		var cidrs []string
+		for c := range strings.SplitSeq(spec, ",") {
+			cidrs = append(cidrs, strings.TrimSpace(c))
 		}
 		return middleware.ClientIPFromXFF(cidrs...)
 	}

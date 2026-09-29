@@ -23,6 +23,36 @@ export async function client<T>(endpoint: string, options?: RequestInit): Promis
 	return (text ? JSON.parse(text) : undefined) as T;
 }
 
+export type Agent = {
+	name: string;
+	addr: string;
+	connected: boolean;
+	since: string;
+	updated: string;
+	routers: number;
+	services: number;
+};
+
+export type Collision = {
+	kind: string;
+	name: string;
+	source: string;
+	owner: string;
+};
+
+export type SharedService = {
+	name: string;
+	agents: string[];
+	servers: string[];
+};
+
+export type Snapshot = {
+	config: Record<string, any>;
+	agents: Agent[] | null;
+	collisions: Collision[] | null;
+	shared: SharedService[] | null;
+};
+
 export const api = {
 	login: (secret: string) =>
 		client<void>('/api/login', {
@@ -34,12 +64,15 @@ export const api = {
 		loggedIn.current = false;
 	},
 	envs: () => client<string[]>('/api/envs'),
-	config: (env: string) => client<any>(`/config?env=${env}`),
 
-	events(env: string): EventSource {
-		const source = new EventSource(`/api/events?env=${env}`, { withCredentials: true });
-		source.onerror = (err) => {
-			console.error('SSE Error', err);
+	events(env: string, onSnapshot: (s: Snapshot) => void): EventSource {
+		const source = new EventSource(`/api/events?env=${encodeURIComponent(env)}`, {
+			withCredentials: true
+		});
+		source.onmessage = (event) => onSnapshot(JSON.parse(event.data));
+		// EventSource hides the status code, a regular request tells us if the session expired.
+		source.onerror = () => {
+			api.envs().catch(() => {});
 		};
 		return source;
 	}
