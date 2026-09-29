@@ -5,11 +5,6 @@ report_sizes: true
 before:
   hooks:
     - go generate ./web
-    - go fmt ./...
-    - go vet ./...
-    - go test ./...
-    - go mod tidy
-    - go mod verify
 
 builds:
   - binary: "{{ .ProjectName }}"
@@ -28,19 +23,12 @@ builds:
       - amd64
       - arm64
 
-upx:
-  - enabled: true
-    lzma: true
-    compress: best
-    goos: [linux]
-
 kos:
   - main: .
-    base_image: alpine
+    base_image: gcr.io/distroless/static-debian13
     repositories: [ghcr.io/mizuchilabs/tether]
     bare: true
     preserve_import_paths: false
-    sbom: none
     creation_time: "{{ .CommitTimestamp }}"
     tags:
       - "{{ .Version }}"
@@ -58,6 +46,11 @@ signs:
       - "--bundle=${signature}"
       - "${artifact}"
       - "--yes"
+
+docker_signs:
+  - cmd: cosign
+    artifacts: manifests
+    args: ["sign", "${artifact}@${digest}", "--yes"]
 
 sboms:
   - cmd: syft
