@@ -23,6 +23,7 @@ linters:
     - bidichk
     - bodyclose
     - canonicalheader
+    - containedctx
     - copyloopvar
     - cyclop
     - depguard
@@ -55,6 +56,7 @@ linters:
     - modernize
     - musttag
     - nakedret
+    - nilerr
     - nilnesserr
     - noctx
     - nolintlint
@@ -117,7 +119,6 @@ linters:
       check:
         - switch
         - map
-      default-signifies-exhaustive: true
 
     funcorder:
       struct-method: false
