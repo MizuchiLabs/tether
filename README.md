@@ -12,6 +12,11 @@
 
 Think of it as a **central operator**: multiple servers (running [Tetherd](https://github.com/MizuchiLabs/tetherd)) tell Tether which apps are running, and Tether gives Traefik a single, master list of all of them.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./.github/screenshots/dashboard-dark.png">
+  <img alt="Tether dashboard with four connected agents and the merged Traefik config" src="./.github/screenshots/dashboard-light.png">
+</picture>
+
 ## Why use Tether?
 
 If you have multiple physical servers or VPS instances but don't want the complexity of Kubernetes or Docker Swarm, Tether is for you.
@@ -80,10 +85,6 @@ providers:
 ---
 
 **Next Step:** Install [Tetherd](https://github.com/MizuchiLabs/tetherd) on your other servers to start connecting them!
-
-## Screenshot
-
-![Dashboard](./.github/screenshots/dashboard.png "Dashboard")
 
 ## License
 
