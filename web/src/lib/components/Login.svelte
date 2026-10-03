@@ -1,90 +1,89 @@
 <script lang="ts">
+	import { api, ApiError } from '#lib/api.js';
+	import Logo from '#lib/assets/logo.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
 	import * as Field from '#lib/components/ui/field/index.js';
 	import * as InputGroup from '#lib/components/ui/input-group/index.js';
 	import { Spinner } from '#lib/components/ui/spinner/index.js';
-	import { Eye, EyeOff } from '@lucide/svelte';
-	import { api } from '#lib/api.js';
-	import Logo from '#lib/assets/logo.svelte';
-	import { loggedIn } from '#lib/store.svelte.js';
+	import { EyeIcon, EyeOffIcon } from '@lucide/svelte';
 
 	let secret = $state('');
-	let showPassword = $state(false);
-	let isLoading = $state(false);
+	let showSecret = $state(false);
+	let loading = $state(false);
 	let error = $state<string | null>(null);
 
-	async function handleLogin(e: SubmitEvent) {
+	async function login(e: SubmitEvent) {
 		e.preventDefault();
-
-		isLoading = true;
+		loading = true;
 		error = null;
 		try {
 			await api.login(secret);
 			secret = '';
-		} catch (err: any) {
-			error = err.message || 'Failed to sign in. Please check your token.';
+		} catch (err) {
+			if (err instanceof ApiError) {
+				error = err.status === 401 ? 'Wrong token, try again.' : err.message;
+			} else {
+				error = "Can't reach Tether right now.";
+			}
 		} finally {
-			isLoading = false;
+			loading = false;
 		}
 	}
 </script>
 
-{#if !loggedIn.current}
-	<section class="flex min-h-screen px-4 py-16 md:py-32">
-		<form
-			onsubmit={handleLogin}
-			class="m-auto h-fit w-full max-w-sm overflow-hidden rounded-[calc(var(--radius)+.125rem)] border bg-muted shadow-md shadow-zinc-950/5 dark:[--color-muted:var(--color-zinc-900)]"
-		>
-			<div class="-m-px rounded-[calc(var(--radius)+.125rem)] border bg-card p-8 pb-6">
-				<div class="text-center">
-					<a href="/" aria-label="go home" class="mx-auto block w-fit">
-						<Logo class="size-7" />
-					</a>
-					<h1 class="mt-4 mb-1 text-xl font-semibold">Authenticate with Tether</h1>
-					<p class="text-sm">Enter your shared secret token to view agent configurations.</p>
-				</div>
-
-				<Field.FieldGroup class="mt-6">
+<main class="flex min-h-screen items-center justify-center px-4 py-16">
+	<Card.Root class="w-full max-w-sm">
+		<Card.Header class="justify-items-center text-center">
+			<Logo class="mb-2 size-8" />
+			<Card.Title>Sign in to Tether</Card.Title>
+			<Card.Description>Use the token from <code>TETHER_TOKEN</code>.</Card.Description>
+		</Card.Header>
+		<Card.Content>
+			<form onsubmit={login}>
+				<Field.FieldGroup>
 					<Field.Field data-invalid={!!error || undefined}>
-						<Field.FieldLabel for="pwd">Access Token</Field.FieldLabel>
+						<Field.FieldLabel for="token">Token</Field.FieldLabel>
 						<InputGroup.Root>
 							<InputGroup.Input
-								id="pwd"
-								type={showPassword ? 'text' : 'password'}
+								id="token"
+								type={showSecret ? 'text' : 'password'}
+								autocomplete="current-password"
+								autofocus
+								required
 								bind:value={secret}
 								aria-invalid={!!error || undefined}
 							/>
 							<InputGroup.Addon align="inline-end">
-								<Button
-									aria-label={showPassword ? 'Hide password' : 'Show password'}
-									title={showPassword ? 'Hide password' : 'Show password'}
-									variant="ghost"
-									size="icon-sm"
-									onclick={() => (showPassword = !showPassword)}
+								<InputGroup.Button
+									size="icon-xs"
+									aria-label={showSecret ? 'Hide token' : 'Show token'}
+									title={showSecret ? 'Hide token' : 'Show token'}
+									onclick={() => (showSecret = !showSecret)}
 								>
-									{#if showPassword}
-										<EyeOff data-icon="inline-start" />
+									{#if showSecret}
+										<EyeOffIcon />
 									{:else}
-										<Eye data-icon="inline-start" />
+										<EyeIcon />
 									{/if}
-								</Button>
+								</InputGroup.Button>
 							</InputGroup.Addon>
 						</InputGroup.Root>
 						{#if error}
-							<Field.FieldDescription class="text-destructive">{error}</Field.FieldDescription>
+							<Field.FieldError>{error}</Field.FieldError>
 						{/if}
 					</Field.Field>
 
-					<Button type="submit" disabled={isLoading} class="w-full">
-						{#if isLoading}
+					<Button type="submit" disabled={loading || !secret}>
+						{#if loading}
 							<Spinner data-icon="inline-start" />
-							Verifying...
+							Signing in...
 						{:else}
-							Sign In
+							Sign in
 						{/if}
 					</Button>
 				</Field.FieldGroup>
-			</div>
-		</form>
-	</section>
-{/if}
+			</form>
+		</Card.Content>
+	</Card.Root>
+</main>

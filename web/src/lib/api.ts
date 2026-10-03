@@ -1,10 +1,19 @@
 import { loggedIn } from '#lib/store.svelte.js';
 
+export class ApiError extends Error {
+	constructor(
+		readonly status: number,
+		message: string
+	) {
+		super(message);
+	}
+}
+
 export async function client<T>(endpoint: string, options?: RequestInit): Promise<T> {
 	const headers = new Headers(options?.headers);
 	headers.set('Content-Type', 'application/json');
 
-	const response = await fetch(`${endpoint}`, {
+	const response = await fetch(endpoint, {
 		...options,
 		credentials: 'include',
 		headers
@@ -12,11 +21,10 @@ export async function client<T>(endpoint: string, options?: RequestInit): Promis
 
 	if (!response.ok) {
 		if (response.status === 401) loggedIn.current = false;
-		const errorBody = await response.text();
-		throw new Error(errorBody || `API Error: ${response.status} - ${response.statusText}`);
+		const body = (await response.text()).trim();
+		throw new ApiError(response.status, body || response.statusText || `Error ${response.status}`);
 	}
 
-	// Ensure the user is logged in if the request was successful
 	if (!loggedIn.current) loggedIn.current = true;
 
 	const text = await response.text();
@@ -46,8 +54,18 @@ export type SharedService = {
 	servers: string[];
 };
 
+// Named entries per section, like http.routers.<name>.
+export type Sections = Record<string, Record<string, unknown>>;
+
+export type TraefikConfig = {
+	http?: Sections;
+	tcp?: Sections;
+	udp?: Sections;
+	tls?: Record<string, unknown>;
+};
+
 export type Snapshot = {
-	config: Record<string, any>;
+	config: TraefikConfig;
 	agents: Agent[] | null;
 	collisions: Collision[] | null;
 	shared: SharedService[] | null;
@@ -63,17 +81,5 @@ export const api = {
 		await client<void>('/api/logout', { method: 'POST' });
 		loggedIn.current = false;
 	},
-	envs: () => client<string[]>('/api/envs'),
-
-	events(env: string, onSnapshot: (s: Snapshot) => void): EventSource {
-		const source = new EventSource(`/api/events?env=${encodeURIComponent(env)}`, {
-			withCredentials: true
-		});
-		source.onmessage = (event) => onSnapshot(JSON.parse(event.data));
-		// EventSource hides the status code, a regular request tells us if the session expired.
-		source.onerror = () => {
-			api.envs().catch(() => {});
-		};
-		return source;
-	}
+	envs: async () => (await client<string[] | null>('/api/envs')) ?? []
 };

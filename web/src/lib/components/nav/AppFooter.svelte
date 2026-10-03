@@ -2,13 +2,15 @@
 	import Github from '#lib/assets/github.svelte';
 </script>
 
-<a
-	href="https://github.com/mizuchilabs/tether"
-	target="_blank"
-	rel="noopener noreferrer"
-	class="fixed right-4 bottom-3 z-50 flex items-center gap-1 text-[11px] text-muted-foreground transition-colors"
-	aria-label="Tether on GitHub"
-	title="Powered by Tether"
->
-	<Github class="size-4" />
-</a>
+<footer class="mx-auto flex w-full justify-end pb-4">
+	<a
+		href="https://github.com/mizuchilabs/tether"
+		target="_blank"
+		rel="noopener noreferrer"
+		class="rounded-sm text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50"
+		aria-label="Tether on GitHub"
+		title="Tether on GitHub"
+	>
+		<Github class="size-4" />
+	</a>
+</footer>

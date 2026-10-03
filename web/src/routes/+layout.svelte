@@ -12,14 +12,15 @@
 
 <ModeWatcher />
 <Toaster richColors />
-<Login />
 
 {#if loggedIn.current}
-	<div class="flex min-h-screen flex-col">
+	<div class="flex min-h-screen flex-col px-4">
 		<AppHeader />
-		<main class="z-10 mb-12 flex-1">
-			{@render children?.()}
+		<main class="mx-auto flex w-full max-w-5xl flex-1 flex-col">
+			{@render children()}
 		</main>
 		<AppFooter />
 	</div>
+{:else}
+	<Login />
 {/if}

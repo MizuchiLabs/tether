@@ -1,42 +1,53 @@
 <script lang="ts">
-	import { api, type Snapshot } from '#lib/api.js';
 	import Agents from '#lib/components/Agents.svelte';
 	import Config from '#lib/components/Config.svelte';
 	import * as Empty from '#lib/components/ui/empty/index.js';
+	import { Spinner } from '#lib/components/ui/spinner/index.js';
+	import { live } from '#lib/live.svelte.js';
 	import { env } from '#lib/store.svelte.js';
-	import { Cloud } from '@lucide/svelte';
+	import { CloudIcon } from '@lucide/svelte';
+	import { useInterval } from 'runed';
 
-	let snapshot = $state.raw<Snapshot | null>(null);
+	useInterval(5000, { immediateCallback: true, callback: () => live.refreshEnvs() });
+
+	const ready = $derived(live.envs?.includes(env.current) ?? false);
 
 	// Live connection to the server, not derivable state.
 	$effect(() => {
-		if (!env.current) return;
-		snapshot = null;
-		const source = api.events(env.current, (s) => (snapshot = s));
-		return () => source.close();
+		if (ready) return live.connect(env.current);
 	});
 </script>
 
-<div class="mx-auto mt-4 flex w-full max-w-5xl flex-1 flex-col gap-6">
-	{#if env.current}
-		<Agents
-			agents={snapshot?.agents ?? []}
-			collisions={snapshot?.collisions ?? []}
-			shared={snapshot?.shared ?? []}
-		/>
-		<Config config={snapshot?.config} />
-	{:else}
-		<Empty.Root class="border border-dashed">
+<div class="flex flex-1 flex-col gap-6 pb-6">
+	{#if live.envs?.length === 0}
+		<Empty.Root class="border">
 			<Empty.Header>
 				<Empty.Media variant="icon">
-					<Cloud />
+					<CloudIcon />
 				</Empty.Media>
-				<Empty.Title>Waiting for agents...</Empty.Title>
+				<Empty.Title>Waiting for agents</Empty.Title>
 				<Empty.Description>
-					Environments are discovered automatically when tetherd agents push their local
-					configurations. Waiting for the first agent to connect...
+					Start <a href="https://github.com/MizuchiLabs/tetherd" target="_blank" rel="noreferrer"
+						>tetherd</a
+					> on your servers. They show up here as soon as they connect.
 				</Empty.Description>
 			</Empty.Header>
 		</Empty.Root>
+	{:else if !live.snapshot}
+		<Empty.Root>
+			<Empty.Header>
+				<Empty.Media variant="icon">
+					<Spinner />
+				</Empty.Media>
+				<Empty.Title>Connecting</Empty.Title>
+			</Empty.Header>
+		</Empty.Root>
+	{:else}
+		<Agents
+			agents={live.snapshot.agents ?? []}
+			collisions={live.snapshot.collisions ?? []}
+			shared={live.snapshot.shared ?? []}
+		/>
+		<Config config={live.snapshot.config} />
 	{/if}
 </div>
