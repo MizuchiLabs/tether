@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Github from '$lib/assets/github.svelte';
+	import Github from '#lib/assets/github.svelte';
 </script>
 
 <a

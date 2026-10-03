@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import Logo from '$lib/assets/logo.svelte';
-	import { Button } from '$lib/components/ui/button';
+	import Logo from '#lib/assets/logo.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
 	import { LogOut, Moon, Sun } from '@lucide/svelte';
 	import { mode, toggleMode } from 'mode-watcher';
-	import { api } from '$lib/api';
-	import * as Select from '$lib/components/ui/select';
-	import { env, loggedIn } from '$lib/store.svelte';
+	import { api } from '#lib/api.js';
+	import * as Select from '#lib/components/ui/select/index.js';
+	import { env, loggedIn } from '#lib/store.svelte.js';
 
 	let envs = $state.raw<string[]>([]);
 

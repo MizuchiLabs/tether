@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui/button';
-	import * as Field from '$lib/components/ui/field';
-	import * as InputGroup from '$lib/components/ui/input-group';
-	import { Spinner } from '$lib/components/ui/spinner';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Field from '#lib/components/ui/field/index.js';
+	import * as InputGroup from '#lib/components/ui/input-group/index.js';
+	import { Spinner } from '#lib/components/ui/spinner/index.js';
 	import { Eye, EyeOff } from '@lucide/svelte';
-	import { api } from '$lib/api';
-	import Logo from '$lib/assets/logo.svelte';
-	import { loggedIn } from '$lib/store.svelte';
+	import { api } from '#lib/api.js';
+	import Logo from '#lib/assets/logo.svelte';
+	import { loggedIn } from '#lib/store.svelte.js';
 
 	let secret = $state('');
 	let showPassword = $state(false);

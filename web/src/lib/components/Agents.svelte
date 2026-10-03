@@ -1,9 +1,9 @@
 <script lang="ts">
-	import type { Agent, Collision, SharedService } from '$lib/api';
-	import * as Alert from '$lib/components/ui/alert';
-	import { Badge } from '$lib/components/ui/badge';
-	import * as Card from '$lib/components/ui/card';
-	import * as Table from '$lib/components/ui/table';
+	import type { Agent, Collision, SharedService } from '#lib/api.js';
+	import * as Alert from '#lib/components/ui/alert/index.js';
+	import { Badge } from '#lib/components/ui/badge/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import * as Table from '#lib/components/ui/table/index.js';
 	import { NetworkIcon, TriangleAlertIcon } from '@lucide/svelte';
 	import { useInterval } from 'runed';
 

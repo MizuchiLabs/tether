@@ -1,13 +1,13 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui/button';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
-	import * as Empty from '$lib/components/ui/empty';
-	import * as InputGroup from '$lib/components/ui/input-group';
-	import * as ScrollArea from '$lib/components/ui/scroll-area';
-	import { Spinner } from '$lib/components/ui/spinner';
-	import * as Tabs from '$lib/components/ui/tabs';
-	import { UseClipboard } from '$lib/hooks/use-clipboard.svelte';
-	import { env, lang } from '$lib/store.svelte';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
+	import * as Empty from '#lib/components/ui/empty/index.js';
+	import * as InputGroup from '#lib/components/ui/input-group/index.js';
+	import * as ScrollArea from '#lib/components/ui/scroll-area/index.js';
+	import { Spinner } from '#lib/components/ui/spinner/index.js';
+	import * as Tabs from '#lib/components/ui/tabs/index.js';
+	import { UseClipboard } from '#lib/hooks/use-clipboard.svelte.js';
+	import { env, lang } from '#lib/store.svelte.js';
 	import {
 		CheckIcon,
 		CopyIcon,

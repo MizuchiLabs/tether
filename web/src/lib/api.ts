@@ -1,4 +1,4 @@
-import { loggedIn } from '$lib/store.svelte';
+import { loggedIn } from '#lib/store.svelte.js';
 
 export async function client<T>(endpoint: string, options?: RequestInit): Promise<T> {
 	const headers = new Headers(options?.headers);

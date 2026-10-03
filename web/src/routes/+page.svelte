@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { api, type Snapshot } from '$lib/api';
-	import Agents from '$lib/components/Agents.svelte';
-	import Config from '$lib/components/Config.svelte';
-	import * as Empty from '$lib/components/ui/empty';
-	import { env } from '$lib/store.svelte';
+	import { api, type Snapshot } from '#lib/api.js';
+	import Agents from '#lib/components/Agents.svelte';
+	import Config from '#lib/components/Config.svelte';
+	import * as Empty from '#lib/components/ui/empty/index.js';
+	import { env } from '#lib/store.svelte.js';
 	import { Cloud } from '@lucide/svelte';
 
 	let snapshot = $state.raw<Snapshot | null>(null);

@@ -1,9 +1,9 @@
 <script lang="ts">
-	import Login from '$lib/components/Login.svelte';
-	import AppFooter from '$lib/components/nav/AppFooter.svelte';
-	import AppHeader from '$lib/components/nav/AppHeader.svelte';
-	import { Toaster } from '$lib/components/ui/sonner';
-	import { loggedIn } from '$lib/store.svelte';
+	import Login from '#lib/components/Login.svelte';
+	import AppFooter from '#lib/components/nav/AppFooter.svelte';
+	import AppHeader from '#lib/components/nav/AppHeader.svelte';
+	import { Toaster } from '#lib/components/ui/sonner/index.js';
+	import { loggedIn } from '#lib/store.svelte.js';
 	import { ModeWatcher } from 'mode-watcher';
 	import './layout.css';
 
