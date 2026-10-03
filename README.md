@@ -23,7 +23,7 @@ If you have multiple physical servers or VPS instances but don't want the comple
 
 - **One Public IP:** Point your router/firewall (Port 443) to just **one** server running Traefik.
 - **Auto-Discovery:** Apps on other servers are automatically found and added to Traefik.
-- **Simple:** No complex networking, no KV stores (Consul/Redis), just simple HTTP heartbeats.
+- **Simple:** No complex networking, no KV stores (Consul/Redis). Each agent keeps one WebSocket connection to Tether and pushes changes over it.
 
 ## The "One IP, Many Servers" Setup
 
@@ -64,14 +64,14 @@ providers:
 
 ## Configuration
 
-| Env Var         | Flag       | Default             | Description                                                    |
-| --------------- | ---------- | ------------------- | -------------------------------------------------------------- |
-| `TETHER_TOKEN`  | `--token`  |                     | **Strongly recommended**: Shared secret for agents to connect. |
-| `TETHER_PORT`   | `--port`   | `3000`              | Port Tether listens on.                                        |
-| `TETHER_NO_WEB` | `--no-web` | `false`             | Disable serving the web UI.                                    |
-| `TETHER_CONFIG` | `--config` | `/data/dynamic.yml` | Optional local file for manual Traefik rules.                  |
-| `TETHER_DEBUG`  | `--debug`  | `false`             | Enable detailed logging.                                       |
-| `TETHER_TRUSTED_PROXIES` | `--trusted-proxies` | `direct` | Where to read client IPs for rate limiting: `direct`, `cloudflare`, `traefik`, or CIDRs. |
+| Env Var                  | Flag                | Default             | Description                                                                              |
+| ------------------------ | ------------------- | ------------------- | ---------------------------------------------------------------------------------------- |
+| `TETHER_TOKEN`           | `--token`           |                     | **Strongly recommended**: Shared secret for agents to connect.                           |
+| `TETHER_PORT`            | `--port`            | `3000`              | Port Tether listens on.                                                                  |
+| `TETHER_NO_WEB`          | `--no-web`          | `false`             | Disable serving the web UI.                                                              |
+| `TETHER_CONFIG`          | `--config`          | `/data/dynamic.yml` | Optional local file for manual Traefik rules.                                            |
+| `TETHER_DEBUG`           | `--debug`           | `false`             | Enable detailed logging.                                                                 |
+| `TETHER_TRUSTED_PROXIES` | `--trusted-proxies` | `direct`            | Where to read client IPs for rate limiting: `direct`, `cloudflare`, `traefik`, or CIDRs. |
 
 ## How it behaves
 
