@@ -36,7 +36,7 @@
 		"@tailwindcss/vite": "^4.3.3",
 		"@types/node": "^26.6.4",
 		"@typescript/native": "npm:typescript@^7.0.2",
-		"bits-ui": "2.19.4",
+		"bits-ui": "2.19.5",
 		"clsx": "^2.1.1",
 		"cn": "^0.4.0",
 		"js-toml": "^2.0.1",
