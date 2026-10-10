@@ -1,6 +1,6 @@
 module github.com/mizuchilabs/tether
 
-go 1.27.0
+go 1.27.2
 
 require (
 	github.com/coder/websocket v1.8.15
@@ -20,5 +20,5 @@ require (
 	github.com/andybalholm/brotli v1.2.6 // indirect
 	github.com/klauspost/cpuid/v2 v2.4.0 // indirect
 	github.com/zeebo/xxh3 v1.1.0 // indirect
-	golang.org/x/sys v0.48.0 // indirect
+	golang.org/x/sys v0.49.0 // indirect
 )
