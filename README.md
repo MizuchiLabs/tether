@@ -73,6 +73,18 @@ providers:
 | `TETHER_DEBUG`           | `--debug`           | `false`             | Enable detailed logging.                                                                 |
 | `TETHER_TRUSTED_PROXIES` | `--trusted-proxies` | `direct`            | Where to read client IPs for rate limiting: `direct`, `cloudflare`, `traefik`, or CIDRs. |
 
+## Healthcheck
+
+The image has no shell, so use the built-in `health` command. It exits 0 while the server answers on `/healthz`.
+
+```yaml
+    healthcheck:
+      test: ["CMD", "tether", "health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 5s
+```
+
 ## How it behaves
 
 - **Stateless.** Tether keeps everything in memory and never writes files. Agents push their config again when they reconnect.

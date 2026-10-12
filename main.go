@@ -42,6 +42,13 @@ func main() {
 				TrustedProxies: cmd.String("trusted-proxies"),
 			})
 		},
+		Commands: []*cli.Command{{
+			Name:  "health",
+			Usage: "Exit 0 if the running server answers, for container healthchecks",
+			Action: func(ctx context.Context, cmd *cli.Command) error {
+				return api.Healthy(ctx, cmd.String("port"))
+			},
+		}},
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "debug",

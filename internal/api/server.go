@@ -89,6 +89,28 @@ func Serve(ctx context.Context, st *state.State, cfg Config) error {
 	}
 }
 
+// Healthy reports whether the server on this host answers on /healthz.
+func Healthy(ctx context.Context, port string) error {
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	url := "http://" + net.JoinHostPort("127.0.0.1", port) + "/healthz"
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return err
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status %s", resp.Status)
+	}
+	return nil
+}
+
 // quietRequest skips logging successful polling and stream traffic. Failures always log.
 func quietRequest(r *http.Request, status int) bool {
 	if status >= http.StatusBadRequest {
