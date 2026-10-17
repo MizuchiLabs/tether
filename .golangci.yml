@@ -118,7 +118,7 @@ linters:
     exhaustive:
       check:
         - switch
-        - map
+        - mapliteral
 
     funcorder:
       struct-method: false
