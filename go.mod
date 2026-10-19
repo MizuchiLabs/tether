@@ -8,7 +8,7 @@ require (
 	github.com/go-chi/chi/v5 v5.5.0
 	github.com/go-chi/httplog/v3 v3.5.0
 	github.com/go-chi/httprate v0.16.1
-	github.com/mizuchilabs/kata v0.1.15
+	github.com/mizuchilabs/kata v0.2.0
 	github.com/stretchr/testify v1.12.1
 	github.com/unrolled/secure v1.17.0
 	github.com/urfave/cli/v3 v3.14.0
