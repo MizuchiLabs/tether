@@ -23,7 +23,7 @@
 	},
 	"dependencies": {
 		"@fontsource-variable/victor-mono": "^5.3.0",
-		"runed": "^0.37.1"
+		"runed": "^0.38.0"
 	},
 	"devDependencies": {
 		"@fontsource-variable/manrope": "^5.3.0",
