@@ -13,7 +13,7 @@ require (
 	github.com/unrolled/secure v1.17.0
 	github.com/urfave/cli/v3 v3.14.0
 	github.com/vearutop/statigz v1.5.0
-	go.yaml.in/yaml/v3 v3.0.5
+	go.yaml.in/yaml/v3 v3.0.6
 )
 
 require (
