@@ -211,7 +211,7 @@ importers:
         version: 2.1.1
       cn:
         specifier: ^0.5.0
-        version: 0.5.0
+        version: 0.5.1
       js-toml:
         specifier: ^2.0.1
         version: 2.0.1
@@ -1060,8 +1060,8 @@ packages:
     engines: {node: '>=20'}
     hasBin: true
 
-  cn@0.5.0:
-    resolution: {integrity: sha512-JGEixZEpfFXm1P5uXwvEobOFLlHwIWi5v4tjd1ZwfiYmcEilkuD2l+054rvJcYCR1B+uVThHeUbgmNz1FwuxuA==}
+  cn@0.5.1:
+    resolution: {integrity: sha512-SA06SpzSWXRNrt/EQWnRpck9jEVDfVJonw8ZewiNR6pOC4U0SQ81tWaQ9/PKNPh/lWvjuY4CMlxpc8tJViiX6Q==}
     engines: {node: '>=22'}
     hasBin: true
 
@@ -2198,7 +2198,7 @@ snapshots:
 
   cn@0.3.3: {}
 
-  cn@0.5.0: {}
+  cn@0.5.1: {}
 
   comma-separated-tokens@2.0.3: {}
 
