@@ -13,12 +13,13 @@ require (
 	github.com/unrolled/secure v1.17.0
 	github.com/urfave/cli/v3 v3.14.0
 	github.com/vearutop/statigz v1.5.0
-	go.yaml.in/yaml/v3 v3.0.6
+	go.yaml.in/yaml/v4 v4.0.0
 )
 
 require (
 	github.com/andybalholm/brotli v1.2.6 // indirect
 	github.com/klauspost/cpuid/v2 v2.4.1 // indirect
 	github.com/zeebo/xxh3 v1.1.0 // indirect
+	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/sys v0.49.0 // indirect
 )
