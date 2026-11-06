@@ -17,8 +17,8 @@ require (
 )
 
 require (
-	github.com/andybalholm/brotli v1.2.6 // indirect
-	github.com/klauspost/cpuid/v2 v2.4.1 // indirect
+	github.com/andybalholm/brotli v1.2.8 // indirect
+	github.com/klauspost/cpuid/v2 v2.4.2 // indirect
 	github.com/zeebo/xxh3 v1.1.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/sys v0.49.0 // indirect
