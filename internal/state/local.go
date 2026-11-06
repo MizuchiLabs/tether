@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 
 	"github.com/fsnotify/fsnotify"
-	"go.yaml.in/yaml/v3"
+	"go.yaml.in/yaml/v4"
 )
 
 // watchLocalFile loads the file into the default environment and reloads it on change.
