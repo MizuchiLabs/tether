@@ -41,7 +41,7 @@
 		"cn": "^0.5.2",
 		"js-toml": "^2.0.1",
 		"mode-watcher": "^1.1.0",
-		"oxfmt": "^0.76.0",
+		"oxfmt": "^0.77.0",
 		"oxlint": "^1.91.0",
 		"oxlint-tsgolint": "^7.0.2005",
 		"shadcn-svelte": "^1.8.0",
