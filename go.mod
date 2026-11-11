@@ -10,7 +10,7 @@ require (
 	github.com/go-chi/httprate v0.16.1
 	github.com/mizuchilabs/kata v0.2.0
 	github.com/stretchr/testify v1.12.1
-	github.com/unrolled/secure v1.17.0
+	github.com/unrolled/secure v1.18.0
 	github.com/urfave/cli/v3 v3.14.0
 	github.com/vearutop/statigz v1.5.0
 	go.yaml.in/yaml/v4 v4.0.0
