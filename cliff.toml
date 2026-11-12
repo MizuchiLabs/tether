@@ -44,3 +44,5 @@ commit_parsers = [
 
 [bump]
 initial_tag = "v0.1.0"
+# A breaking change bumps the minor while the version is 0.x. From 1.0 on it bumps the major.
+breaking_always_bump_major = false
