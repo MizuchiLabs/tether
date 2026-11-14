@@ -8,19 +8,23 @@
 	import { live } from '#lib/live.svelte.js';
 	import { env } from '#lib/store.svelte.js';
 	import { LogOut, Moon, Sun } from '@lucide/svelte';
-	import { mode, toggleMode } from 'mode-watcher';
+	import { toggleMode } from 'mode-watcher';
 </script>
 
-<header class="mx-auto mt-4 mb-6 flex w-full max-w-5xl items-center justify-between gap-3">
+<header
+	class="pointer-events-none sticky top-4 z-50 mx-auto mt-4 mb-6 flex w-full max-w-5xl items-center justify-between gap-3"
+>
 	<a
 		href={resolve('/')}
-		class="flex h-10 min-w-0 items-center gap-2 rounded-full border px-3.5 shadow-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+		class="pointer-events-auto flex h-10 min-w-0 items-center gap-2 rounded-full border bg-background/80 px-3.5 shadow-sm backdrop-blur-md outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
 	>
 		<Logo class="size-5 shrink-0" />
 		<span class="truncate text-sm font-semibold tracking-tight">Tether</span>
 	</a>
 
-	<div class="flex h-10 shrink-0 items-center gap-1 rounded-full border px-2 shadow-sm">
+	<div
+		class="pointer-events-auto flex h-10 shrink-0 items-center gap-1 rounded-full border bg-background/80 px-1.5 shadow-sm backdrop-blur-md"
+	>
 		{#if live.offline}
 			<span
 				role="status"
@@ -55,11 +59,8 @@
 			aria-label="Toggle theme"
 			title="Toggle theme"
 		>
-			{#if mode.current === 'light'}
-				<Moon />
-			{:else}
-				<Sun />
-			{/if}
+			<Moon class="dark:hidden" />
+			<Sun class="hidden dark:block" />
 		</Button>
 		<Button
 			variant="ghost"

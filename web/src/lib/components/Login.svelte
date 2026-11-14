@@ -32,7 +32,7 @@
 	}
 </script>
 
-<main class="flex min-h-screen items-center justify-center px-4 py-16">
+<main class="flex min-h-svh items-center justify-center px-4 py-16">
 	<Card.Root class="w-full max-w-sm">
 		<Card.Header class="justify-items-center text-center">
 			<Logo class="mb-2 size-8" />

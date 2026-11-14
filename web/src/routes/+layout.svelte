@@ -10,11 +10,12 @@
 	const { children } = $props();
 </script>
 
-<ModeWatcher />
+<!-- Same values as --background in layout.css. -->
+<ModeWatcher themeColors={{ dark: '#181825', light: '#eff1f5' }} />
 <Toaster richColors />
 
 {#if loggedIn.current}
-	<div class="flex min-h-screen flex-col px-4">
+	<div class="flex min-h-svh flex-col px-4">
 		<AppHeader />
 		<main class="mx-auto flex w-full max-w-5xl flex-1 flex-col">
 			{@render children()}
