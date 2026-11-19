@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 
 	"github.com/urfave/cli/v3"
 
@@ -34,6 +35,13 @@ func main() {
 			st, err := state.New(ctx, cmd.String("config"))
 			if err != nil {
 				return err
+			}
+			for _, u := range cmd.StringSlice("upstream") {
+				name, url, ok := strings.Cut(u, "=")
+				if !ok || name == "" || url == "" {
+					return fmt.Errorf("invalid upstream %q, want name=url", u)
+				}
+				st.WatchUpstream(ctx, name, url)
 			}
 			return api.Serve(ctx, st, api.Config{
 				Port:           cmd.String("port"),
@@ -80,6 +88,11 @@ func main() {
 				Aliases: []string{"t"},
 				Usage:   "Shared secret token for agent authentication",
 				Sources: cli.EnvVars("TETHER_TOKEN"),
+			},
+			&cli.StringSliceFlag{
+				Name:    "upstream",
+				Usage:   "Other traefik http provider to merge in, as name=url (repeatable)",
+				Sources: cli.EnvVars("TETHER_UPSTREAMS"),
 			},
 			&cli.StringFlag{
 				Name:    "trusted-proxies",

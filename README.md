@@ -72,6 +72,7 @@ providers:
 | `TETHER_CONFIG`          | `--config`          | `/data/dynamic.yml` | Optional local file for manual Traefik rules.                                            |
 | `TETHER_DEBUG`           | `--debug`           | `false`             | Enable detailed logging.                                                                 |
 | `TETHER_TRUSTED_PROXIES` | `--trusted-proxies` | `direct`            | Where to read client IPs for rate limiting: `direct`, `cloudflare`, `traefik`, or CIDRs. |
+| `TETHER_UPSTREAMS`       | `--upstream`        |                     | Other Traefik HTTP providers to merge in, as `name=url`. Comma separated or repeated.    |
 
 ## Healthcheck
 
@@ -92,6 +93,7 @@ The image has no shell, so use the built-in `health` command. It exits 0 while t
 - **Offline agents.** When an agent disconnects, its routes stay for 30s. If it doesn't come back, they are removed so Traefik stops sending traffic to a dead host.
 - **Load balancing.** Run the same app on several machines with the same labels and Tether load balances across them. An HTTP service is shared when every agent routes to it with identical routers (same rule, entrypoints, middlewares, TLS) and the service settings match apart from the servers. Unrelated apps that happen to share a name have different routers, so they are never merged. TCP and UDP are never shared. An offline agent leaves a shared service right away since the others still serve it.
 - **Name collisions.** If two sources define the same router, service or middleware name differently, the first one wins: the local file first, then agents sorted by name. Skipped entries are shown in the UI.
+- **Upstreams.** Traefik only takes one HTTP provider. To use Tether next to another one, like Pangolin, point Tether at it with `TETHER_UPSTREAMS=pangolin=http://pangolin:3001/api/v1/traefik-config` and point Traefik at Tether. Tether polls each upstream every 5s and treats it like an agent with that name.
 - **Local file.** Mount the directory instead of the single file if you want edits picked up live. Editors replace files on save and a single-file bind mount doesn't see that.
 
 ---
