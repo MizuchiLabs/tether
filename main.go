@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -29,7 +30,11 @@ func main() {
 			return ctx, nil
 		},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
-			if cmd.String("token") == "" {
+			token, err := readToken(cmd.String("token"), cmd.String("token-file"))
+			if err != nil {
+				return err
+			}
+			if token == "" {
 				slog.Warn("Authentication is disabled")
 			}
 			st, err := state.New(ctx, cmd.String("config"))
@@ -45,7 +50,7 @@ func main() {
 			}
 			return api.Serve(ctx, st, api.Config{
 				Port:           cmd.String("port"),
-				Token:          cmd.String("token"),
+				Token:          token,
 				NoWeb:          cmd.Bool("no-web"),
 				TrustedProxies: cmd.String("trusted-proxies"),
 			})
@@ -89,6 +94,11 @@ func main() {
 				Usage:   "Shared secret token for agent authentication",
 				Sources: cli.EnvVars("TETHER_TOKEN"),
 			},
+			&cli.StringFlag{
+				Name:    "token-file",
+				Usage:   "File holding the token, such as a docker secret",
+				Sources: cli.EnvVars("TETHER_TOKEN_FILE"),
+			},
 			&cli.StringSliceFlag{
 				Name:    "upstream",
 				Usage:   "Other traefik http provider to merge in, as name=url (repeatable)",
@@ -106,4 +116,22 @@ func main() {
 		fmt.Fprintf(os.Stderr, "%s: %v\n", cmd.Name, err)
 		os.Exit(1)
 	}
+}
+
+func readToken(token, path string) (string, error) {
+	if path == "" {
+		return token, nil
+	}
+	if token != "" {
+		return "", errors.New("set either --token or --token-file, not both")
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", fmt.Errorf("reading token file: %w", err)
+	}
+	token = strings.TrimSpace(string(data))
+	if token == "" {
+		return "", fmt.Errorf("token file %s is empty", path)
+	}
+	return token, nil
 }
