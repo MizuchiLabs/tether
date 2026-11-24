@@ -86,6 +86,7 @@ Tether uses [nushi](https://github.com/mizuchilabs/nushi) for sign in. You open 
 | `TETHER_TRUSTED_PROXIES`                                                                        | Proxy IPs or ranges, such as the subnet of Traefik's docker network. Without it any proxy on a private network is trusted.   |
 
 - Make a token with `openssl rand -hex 32`.
+- The web UI takes the API token too. To skip the login page, have your reverse proxy add `Authorization: Bearer <token>`. Anyone who reaches that proxy is then signed in.
 - API tokens need a password or OIDC next to them. Without either, Tether only answers on localhost.
 - The password, the token and the client secret can sit in a file, such as a docker secret. Add `_FILE` to the var, as in `TETHER_API_TOKEN_FILE=/run/secrets/tether_token`.
 - Every token works for every agent. Separate tokens let you lock one agent out, but an agent can still report itself under another agent's name.
