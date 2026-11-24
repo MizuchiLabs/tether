@@ -10,39 +10,44 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/mizuchilabs/nushi"
+
 	"github.com/mizuchilabs/tether/internal/state"
 )
 
-func TestWithAuth(t *testing.T) {
+func TestRoutesNeedSignIn(t *testing.T) {
 	t.Parallel()
-	ok := http.HandlerFunc(func(http.ResponseWriter, *http.Request) {})
+	const token = "0123456789abcdef0123456789abcdef"
+	st, err := state.New(t.Context(), "")
+	require.NoError(t, err)
+	guard, err := nushi.New("tether", nushi.Config{Password: "correct horse battery", APITokens: []string{token}})
+	require.NoError(t, err)
+	h := routes(t.Context(), st, guard, true)
+
 	tests := []struct {
-		name   string
-		token  string
-		header string
-		cookie string
-		want   int
+		name string
+		path string
+		auth string
+		want int
 	}{
-		{"auth disabled", "", "", "", http.StatusOK},
-		{"bearer", "secret", "Bearer secret", "", http.StatusOK},
-		{"bearer lowercase scheme", "secret", "bearer secret", "", http.StatusOK},
-		{"cookie", "secret", "", "secret", http.StatusOK},
-		{"wrong bearer", "secret", "Bearer nope", "", http.StatusUnauthorized},
-		{"missing", "secret", "", "", http.StatusUnauthorized},
-		{"basic scheme", "secret", "Basic secret", "", http.StatusUnauthorized},
+		{"health is open", "/healthz", "", http.StatusOK},
+		{"session is open", "/api/session", "", http.StatusOK},
+		{"config without a token", "/config", "", http.StatusUnauthorized},
+		{"config with the token reaches the warmup", "/config", "Bearer " + token, http.StatusServiceUnavailable},
+		{"envs with a wrong token", "/api/envs", "Bearer nope", http.StatusUnauthorized},
+		{"envs with the token", "/api/envs", "Bearer " + token, http.StatusOK},
+		{"events without a token", "/api/events", "", http.StatusUnauthorized},
+		{"agent socket without a token", "/api/ws", "", http.StatusUnauthorized},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			r := httptest.NewRequest(http.MethodGet, "/config", nil)
-			if tt.header != "" {
-				r.Header.Set("Authorization", tt.header)
-			}
-			if tt.cookie != "" {
-				r.AddCookie(&http.Cookie{Name: accessCookie, Value: tt.cookie})
+			r := httptest.NewRequest(http.MethodGet, tt.path, nil)
+			if tt.auth != "" {
+				r.Header.Set("Authorization", tt.auth)
 			}
 			w := httptest.NewRecorder()
-			withAuth(tt.token)(ok).ServeHTTP(w, r)
+			h.ServeHTTP(w, r)
 			assert.Equal(t, tt.want, w.Code)
 		})
 	}

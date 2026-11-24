@@ -9,6 +9,8 @@
 	import { env } from '#lib/store.svelte.js';
 	import { LogOut, Moon, Sun } from '@lucide/svelte';
 	import { toggleMode } from 'mode-watcher';
+
+	const { canSignOut }: { canSignOut: boolean } = $props();
 </script>
 
 <header
@@ -62,15 +64,17 @@
 			<Moon class="dark:hidden" />
 			<Sun class="hidden dark:block" />
 		</Button>
-		<Button
-			variant="ghost"
-			size="icon-sm"
-			class="rounded-full hover:bg-destructive/10 hover:text-destructive"
-			onclick={api.logout}
-			aria-label="Log out"
-			title="Log out"
-		>
-			<LogOut />
-		</Button>
+		{#if canSignOut}
+			<Button
+				variant="ghost"
+				size="icon-sm"
+				class="rounded-full hover:bg-destructive/10 hover:text-destructive"
+				onclick={api.logout}
+				aria-label="Log out"
+				title="Log out"
+			>
+				<LogOut />
+			</Button>
+		{/if}
 	</div>
 </header>

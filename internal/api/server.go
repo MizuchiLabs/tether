@@ -16,53 +16,17 @@ import (
 	"github.com/go-chi/httplog/v3"
 
 	"github.com/mizuchilabs/kata/logx"
+	"github.com/mizuchilabs/nushi"
 
 	"github.com/mizuchilabs/tether/internal/state"
 	"github.com/mizuchilabs/tether/web"
 )
 
-// Config holds the server settings from the CLI.
-type Config struct {
-	Port           string
-	Token          string
-	NoWeb          bool
-	TrustedProxies string
-}
-
 // Serve runs the HTTP server until ctx is done.
-func Serve(ctx context.Context, st *state.State, cfg Config) error {
-	mux := chi.NewRouter()
-	mux.Use(httplog.RequestLogger(slog.Default(), &httplog.Options{
-		RecoverPanics: true,
-		Schema:        httplog.SchemaOTEL.Concise(logx.IsTerminal()),
-		Skip:          quietRequest,
-	}))
-	mux.Use(middleware.RequestSize(1 << 20))
-	mux.Use(securityHeaders())
-	mux.Use(rateLimitAPI(cfg.TrustedProxies, 100, time.Minute))
-	mux.Use(middleware.CleanPath)
-
-	mux.Post("/api/login", login(cfg.Token))
-	mux.Post("/api/logout", logout)
-	mux.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) {
-		_, _ = w.Write([]byte("ok"))
-	})
-	if !cfg.NoWeb {
-		mux.Handle("/*", web.Handler())
-	}
-	mux.Group(func(r chi.Router) {
-		r.Use(withAuth(cfg.Token))
-		r.Get("/api/ws", agentWS(st))
-		r.Get("/api/events", eventStream(ctx, st))
-		r.Get("/api/envs", func(w http.ResponseWriter, _ *http.Request) {
-			writeJSON(w, st.EnvNames())
-		})
-		r.Get("/config", publishConfig(st))
-	})
-
+func Serve(ctx context.Context, st *state.State, guard *nushi.Guard, port string, noWeb bool) error {
 	server := &http.Server{
-		Addr:              net.JoinHostPort("0.0.0.0", cfg.Port),
-		Handler:           mux,
+		Addr:              net.JoinHostPort("0.0.0.0", port),
+		Handler:           routes(ctx, st, guard, noWeb),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      30 * time.Second,
@@ -72,7 +36,7 @@ func Serve(ctx context.Context, st *state.State, cfg Config) error {
 
 	serverErr := make(chan error, 1)
 	go func() {
-		slog.Info("Server listening", "port", cfg.Port)
+		slog.Info("Server listening", "port", port)
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			serverErr <- err
 		}
@@ -87,6 +51,36 @@ func Serve(ctx context.Context, st *state.State, cfg Config) error {
 	case err := <-serverErr:
 		return fmt.Errorf("server error: %w", err)
 	}
+}
+
+func routes(ctx context.Context, st *state.State, guard *nushi.Guard, noWeb bool) http.Handler {
+	mux := chi.NewRouter()
+	mux.Use(httplog.RequestLogger(slog.Default(), &httplog.Options{
+		RecoverPanics: true,
+		Schema:        httplog.SchemaOTEL.Concise(logx.IsTerminal()),
+		Skip:          quietRequest,
+	}))
+	mux.Use(middleware.RequestSize(1 << 20))
+	mux.Use(securityHeaders())
+	mux.Use(guard.Protect)
+	mux.Use(middleware.CleanPath)
+
+	mux.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte("ok"))
+	})
+	if !noWeb {
+		mux.Handle("/*", web.Handler())
+	}
+	mux.Group(func(r chi.Router) {
+		r.Use(guard.Require)
+		r.Get("/api/ws", agentWS(st))
+		r.Get("/api/events", eventStream(ctx, st))
+		r.Get("/api/envs", func(w http.ResponseWriter, _ *http.Request) {
+			writeJSON(w, st.EnvNames())
+		})
+		r.Get("/config", publishConfig(st))
+	})
+	return mux
 }
 
 // Healthy reports whether the server on this host answers on /healthz.

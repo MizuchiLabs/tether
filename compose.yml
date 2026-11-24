@@ -6,7 +6,8 @@ services:
       # Mount the directory, not the file, so edits are picked up live.
       # - /path/to/tether:/data # optional local config at /data/dynamic.yml
     environment:
-      - TETHER_TOKEN=your-super-secret-key
+      - TETHER_PASSWORD=your-password
+      - TETHER_API_TOKEN=your-api-token
     networks:
       - proxy
     labels:
@@ -31,7 +32,7 @@ services:
       - --providers.docker.endpoint=unix:///var/run/docker.sock
       - --providers.docker.exposedbydefault=false
       - --providers.http.endpoint=http://tether:3000/config
-      - --providers.http.headers.Authorization=Bearer your-super-secret-key
+      - --providers.http.headers.Authorization=Bearer your-api-token
     networks:
       - proxy
     restart: unless-stopped

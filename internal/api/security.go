@@ -3,10 +3,7 @@ package api
 import (
 	"net/http"
 	"strings"
-	"time"
 
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/httprate"
 	"github.com/unrolled/secure"
 )
 
@@ -29,45 +26,4 @@ func securityHeaders() func(http.Handler) http.Handler {
 			"worker-src 'self' blob:",
 		}, "; "),
 	}).Handler
-}
-
-// clientIPKey extracts and canonicalizes the IP resolved by Chi.
-// httprate.CanonicalizeIP groups IPv6 by /64 to prevent SLAAC rotation bypasses.
-func clientIPKey(r *http.Request) (string, error) {
-	ip := middleware.GetClientIP(r.Context())
-	return httprate.CanonicalizeIP(ip), nil
-}
-
-// rateLimitAPI limits /api requests per client IP.
-func rateLimitAPI(trustedProxies string, n int, window time.Duration) func(http.Handler) http.Handler {
-	clientIP := clientIPMiddleware(trustedProxies)
-	return func(next http.Handler) http.Handler {
-		limited := clientIP(httprate.LimitBy(n, window, clientIPKey)(next))
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if !strings.HasPrefix(r.URL.Path, "/api/") {
-				next.ServeHTTP(w, r)
-				return
-			}
-			limited.ServeHTTP(w, r)
-		})
-	}
-}
-
-func clientIPMiddleware(spec string) func(http.Handler) http.Handler {
-	spec = strings.TrimSpace(spec)
-	switch strings.ToLower(spec) {
-	case "", "direct", "none":
-		return middleware.ClientIPFromRemoteAddr
-	case "cloudflare":
-		return middleware.ClientIPFromHeader("CF-Connecting-IP")
-	case "traefik", "nginx", "standard":
-		return middleware.ClientIPFromHeader("X-Real-IP")
-	default:
-		// Comma-separated CIDR ranges or proxy hop count
-		var cidrs []string
-		for c := range strings.SplitSeq(spec, ",") {
-			cidrs = append(cidrs, strings.TrimSpace(c))
-		}
-		return middleware.ClientIPFromXFF(cidrs...)
-	}
 }

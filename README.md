@@ -45,7 +45,8 @@ services:
     ports:
       - 3000:3000
     environment:
-      - TETHER_TOKEN=your-secret-password # Shared with agents
+      - TETHER_PASSWORD=your-password # For the web UI
+      - TETHER_API_TOKEN=your-api-token # For agents and Traefik, at least 32 characters
     restart: unless-stopped
 ```
 
@@ -59,21 +60,46 @@ providers:
     endpoint: "http://tether:3000/config"
     pollInterval: "5s"
     headers:
-      Authorization: "Bearer your-secret-password"
+      Authorization: "Bearer your-api-token"
 ```
 
 ## Configuration
 
 | Env Var                  | Flag                | Default             | Description                                                                              |
 | ------------------------ | ------------------- | ------------------- | ---------------------------------------------------------------------------------------- |
-| `TETHER_TOKEN`           | `--token`           |                     | **Strongly recommended**: Shared secret for agents to connect.                           |
-| `TETHER_TOKEN_FILE`      | `--token-file`      |                     | File holding the token, such as a docker secret. Use instead of `TETHER_TOKEN`.           |
 | `TETHER_PORT`            | `--port`            | `3000`              | Port Tether listens on.                                                                  |
 | `TETHER_NO_WEB`          | `--no-web`          | `false`             | Disable serving the web UI.                                                              |
 | `TETHER_CONFIG`          | `--config`          | `/data/dynamic.yml` | Optional local file for manual Traefik rules.                                            |
 | `TETHER_DEBUG`           | `--debug`           | `false`             | Enable detailed logging.                                                                 |
-| `TETHER_TRUSTED_PROXIES` | `--trusted-proxies` | `direct`            | Where to read client IPs for rate limiting: `direct`, `cloudflare`, `traefik`, or CIDRs. |
 | `TETHER_UPSTREAMS`       | `--upstream`        |                     | Other Traefik HTTP providers to merge in, as `name=url`. Comma separated or repeated.    |
+
+## Sign in
+
+Tether uses [nushi](https://github.com/mizuchilabs/nushi) for sign in. You open the web UI with a password or through an OIDC provider. Agents, Traefik and scripts send an API token as `Authorization: Bearer <token>`. Sign in settings are env vars only.
+
+| Env Var                                                                                         | Description                                                                                                                  |
+| ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `TETHER_PASSWORD`                                                                               | Password for the web UI, at least 12 characters.                                                                             |
+| `TETHER_API_TOKEN`                                                                              | Token for agents and Traefik, at least 32 characters. Comma separated to give agents their own or to roll to a new one.      |
+| `TETHER_OIDC_ISSUER`, `TETHER_OIDC_CLIENT_ID`, `TETHER_OIDC_CLIENT_SECRET`, `TETHER_PUBLIC_URL` | Sign in through a provider such as PocketID instead of a password. The callback is `<PUBLIC_URL>/api/session/oidc/callback`. |
+| `TETHER_OIDC_GROUP`                                                                             | Optional, only this group from the provider gets in.                                                                         |
+| `TETHER_TRUSTED_PROXIES`                                                                        | Proxy IPs or ranges, such as the subnet of Traefik's docker network. Without it any proxy on a private network is trusted.   |
+
+- Make a token with `openssl rand -hex 32`.
+- API tokens need a password or OIDC next to them. Without either, Tether only answers on localhost.
+- The password, the token and the client secret can sit in a file, such as a docker secret. Add `_FILE` to the var, as in `TETHER_API_TOKEN_FILE=/run/secrets/tether_token`.
+- Every token works for every agent. Separate tokens let you lock one agent out, but an agent can still report itself under another agent's name.
+
+See the [nushi README](https://github.com/mizuchilabs/nushi#readme) for OIDC providers and running behind a proxy.
+
+### Moving from v0.7
+
+v0.8.0 replaces `TETHER_TOKEN` with the settings above.
+
+1. Make a token of at least 32 characters. Set it as `TETHER_API_TOKEN` on Tether, as `TETHERD_TOKEN` on every agent, and in Traefik's provider header.
+2. Set `TETHER_PASSWORD` for the web UI, or the OIDC settings.
+3. Remove `TETHER_TOKEN` and `TETHER_TOKEN_FILE`. Tether doesn't start while either is set.
+4. If you set `TETHER_TRUSTED_PROXIES` to `direct`, `cloudflare` or `traefik`, replace it with IPs or ranges, or remove it.
 
 ## Healthcheck
 

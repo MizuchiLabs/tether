@@ -11,8 +11,11 @@ tasks:
 
   backend:
     desc: Run backend
+    env:
+      TETHER_PASSWORD: dev-password
+      TETHER_API_TOKEN: super-secret-password-32-characters-long
     cmds:
-      - go run . -t 123
+      - go run .
 
   frontend:
     desc: Run frontend

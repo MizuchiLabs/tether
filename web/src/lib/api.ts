@@ -25,11 +25,14 @@ export async function client<T>(endpoint: string, options?: RequestInit): Promis
 		throw new ApiError(response.status, body || response.statusText || `Error ${response.status}`);
 	}
 
-	if (!loggedIn.current) loggedIn.current = true;
-
 	const text = await response.text();
 	return (text ? JSON.parse(text) : undefined) as T;
 }
+
+export type Session = {
+	mode: 'none' | 'password' | 'oidc';
+	signed_in: boolean;
+};
 
 export type Agent = {
 	name: string;
@@ -72,13 +75,16 @@ export type Snapshot = {
 };
 
 export const api = {
-	login: (secret: string) =>
-		client<void>('/api/login', {
+	session: () => client<Session>('/api/session'),
+	login: async (password: string) => {
+		await client<void>('/api/session', {
 			method: 'POST',
-			body: JSON.stringify({ secret })
-		}),
+			body: JSON.stringify({ password })
+		});
+		loggedIn.current = true;
+	},
 	logout: async () => {
-		await client<void>('/api/logout', { method: 'POST' });
+		await client<void>('/api/session', { method: 'DELETE' });
 		loggedIn.current = false;
 	},
 	envs: async () => (await client<string[] | null>('/api/envs')) ?? []
