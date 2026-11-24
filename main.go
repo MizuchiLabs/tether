@@ -37,6 +37,7 @@ func main() {
 			if token == "" {
 				slog.Warn("Authentication is disabled")
 			}
+			warnSignInChange(token, cmd.String("trusted-proxies"))
 			st, err := state.New(ctx, cmd.String("config"))
 			if err != nil {
 				return err
@@ -115,6 +116,28 @@ func main() {
 	if err := cmd.Run(sigx.NotifyContext(), os.Args); err != nil {
 		fmt.Fprintf(os.Stderr, "%s: %v\n", cmd.Name, err)
 		os.Exit(1)
+	}
+}
+
+func warnSignInChange(token, trustedProxies string) {
+	slog.Warn(
+		"v0.8.0 replaces TETHER_TOKEN with TETHER_PASSWORD for the web UI and TETHER_API_TOKEN for agents and Traefik, pin the image to 0.7.0 until you switch",
+	)
+	switch {
+	case token == "":
+		slog.Warn("From v0.8.0 Tether without TETHER_PASSWORD only answers on localhost")
+	case len(token) < 32:
+		slog.Warn(
+			"From v0.8.0 the agent token needs at least 32 characters, set a longer TETHER_TOKEN on Tether and its agents now",
+		)
+	}
+	switch strings.ToLower(strings.TrimSpace(trustedProxies)) {
+	case "direct", "none", "cloudflare", "traefik", "nginx", "standard":
+		slog.Warn(
+			"From v0.8.0 TETHER_TRUSTED_PROXIES only takes IPs and ranges, such as 172.18.0.0/16",
+			"value",
+			trustedProxies,
+		)
 	}
 }
 
