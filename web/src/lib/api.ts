@@ -81,5 +81,6 @@ export const api = {
 		await client<void>('/api/logout', { method: 'POST' });
 		loggedIn.current = false;
 	},
-	envs: async () => (await client<string[] | null>('/api/envs')) ?? []
+	envs: async () => (await client<string[] | null>('/api/envs')) ?? [],
+	v08Ready: () => client<boolean>('/api/v08-ready')
 };

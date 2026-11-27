@@ -27,6 +27,7 @@ type Config struct {
 	Token          string
 	NoWeb          bool
 	TrustedProxies string
+	SignInReady    bool
 }
 
 // Serve runs the HTTP server until ctx is done.
@@ -56,6 +57,9 @@ func Serve(ctx context.Context, st *state.State, cfg Config) error {
 		r.Get("/api/events", eventStream(ctx, st))
 		r.Get("/api/envs", func(w http.ResponseWriter, _ *http.Request) {
 			writeJSON(w, st.EnvNames())
+		})
+		r.Get("/api/v08-ready", func(w http.ResponseWriter, _ *http.Request) {
+			writeJSON(w, cfg.SignInReady)
 		})
 		r.Get("/config", publishConfig(st))
 	})

@@ -75,6 +75,19 @@ providers:
 | `TETHER_TRUSTED_PROXIES` | `--trusted-proxies` | `direct`            | Where to read client IPs for rate limiting: `direct`, `cloudflare`, `traefik`, or CIDRs. |
 | `TETHER_UPSTREAMS`       | `--upstream`        |                     | Other Traefik HTTP providers to merge in, as `name=url`. Comma separated or repeated.    |
 
+## Moving to v0.8.0
+
+v0.8.0 comes out on January 13, 2027 and changes how sign in works. The web UI signs in with a password or OIDC, and agents and Traefik use an API token. `TETHER_TOKEN` goes away and Tether won't start while it is set.
+
+v0.7.1 already reads the new settings, so you can switch before the update:
+
+1. Make a token of at least 32 characters, for example with `openssl rand -hex 32`. Set it as `TETHER_API_TOKEN` (or `TETHER_API_TOKEN_FILE`) on Tether, as `TETHERD_TOKEN` on every agent, and in Traefik's provider header.
+2. Remove `TETHER_TOKEN` and `TETHER_TOKEN_FILE`.
+3. Set `TETHER_PASSWORD` (at least 12 characters) for the web UI, or the OIDC settings. Without either, v0.8.0 only answers on localhost. Until then the web UI still signs in with the API token.
+4. If `TETHER_TRUSTED_PROXIES` is `direct`, `cloudflare` or `traefik`, replace it with IPs or ranges, such as `172.18.0.0/16`, or remove it.
+
+When everything is in place, the banner in the web UI and the startup warnings go away.
+
 ## Healthcheck
 
 The image has no shell, so use the built-in `health` command. It exits 0 while the server answers on `/healthz`.
