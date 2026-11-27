@@ -32,16 +32,15 @@
 		"@sveltejs/adapter-static": "^4.0.1",
 		"@sveltejs/kit": "^3.1.1",
 		"@sveltejs/vite-plugin-svelte": "^7.3.1",
-		"@tailwindcss/typography": "^0.5.20",
 		"@tailwindcss/vite": "^4.3.4",
 		"@types/node": "^26.6.6",
 		"@typescript/native": "npm:typescript@^7.0.2",
-		"bits-ui": "2.21.0",
+		"bits-ui": "2.22.0",
 		"clsx": "^2.1.1",
 		"cn": "^0.5.2",
 		"js-toml": "^2.0.1",
 		"mode-watcher": "^1.1.0",
-		"oxfmt": "^0.79.0",
+		"oxfmt": "^0.80.0",
 		"oxlint": "^1.91.0",
 		"oxlint-tsgolint": "^7.0.2005",
 		"shadcn-svelte": "^1.8.0",
@@ -57,5 +56,5 @@
 		"vite": "^8.3.6",
 		"yaml": "^2.9.1"
 	},
-	"packageManager": "pnpm@12.22.0"
+	"packageManager": "pnpm@12.23.0"
 }

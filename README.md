@@ -93,7 +93,7 @@ Tether uses [nushi](https://github.com/mizuchilabs/nushi) for sign in. You open 
 
 See the [nushi README](https://github.com/mizuchilabs/nushi#readme) for OIDC providers and running behind a proxy.
 
-### Moving from v0.7
+### Moving to v0.8.0
 
 v0.8.0 replaces `TETHER_TOKEN` with the settings above.
 
